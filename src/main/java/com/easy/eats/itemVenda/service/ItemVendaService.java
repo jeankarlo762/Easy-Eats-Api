@@ -1,12 +1,12 @@
-package com.easy.eats.pedido.service;
+package com.easy.eats.itemVenda.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.easy.eats.padrao.repository.VendaRepository;
+import com.easy.eats.itemVenda.repository.ItemVendaRepository;
 
 @Service
-public class PedidoService {
+public class ItemVendaService {
 
     @Autowired
     ItemVendaRepository repository;

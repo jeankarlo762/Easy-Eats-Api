@@ -1,17 +1,17 @@
-package com.easy.eats.venda.controller;
+package com.easy.eats.cliente.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import com.easy.eats.venda.service.VendaService;
+import com.easy.eats.cliente.service.ClienteService;
 
 @Controller
-@RequestMapping("/venda")
-public class VendaController {
+@RequestMapping("/cliente")
+public class ClienteController {
 
     @Autowired
-    VendaService service;
+    ClienteService service;
 
     
 }
