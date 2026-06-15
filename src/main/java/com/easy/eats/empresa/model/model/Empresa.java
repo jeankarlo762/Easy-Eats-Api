@@ -1,4 +1,4 @@
-package com.easy.eats.empresa.model.entity;
+package com.easy.eats.empresa.model.model;
 
 import java.time.LocalDateTime;
 
