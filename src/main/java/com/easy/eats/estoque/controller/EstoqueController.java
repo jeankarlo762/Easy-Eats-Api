@@ -1,9 +1,12 @@
 package com.easy.eats.estoque.controller;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-
 import com.easy.eats.estoque.model.Insumo;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import com.easy.eats.estoque.service.EstoqueService;
 
 @RestController
@@ -25,4 +28,7 @@ public class EstoqueController {
     public Insumo buscar(@PathVariable String nome) {
         return estoqueService.buscarInsumo(nome);
     }
+
+    
 }
+
