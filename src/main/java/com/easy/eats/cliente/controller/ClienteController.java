@@ -39,7 +39,7 @@ public class ClienteController {
     public ResponseEntity<Cliente> buscarPorId(@PathVariable Integer id) {
         Optional<Cliente> cliente = service.buscarPorId(id);
         return cliente.map(ResponseEntity::ok)
-                      .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
@@ -61,5 +61,5 @@ public class ClienteController {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.notFound().build();
-    }   
+    }
 }

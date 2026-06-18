@@ -37,9 +37,8 @@ public class ItemVenda {
     @ManyToOne
     @JoinColumn(name = "venda_id", nullable = false)
     private Venda venda;
-    
+
     @ManyToOne
     @JoinColumn(name = "produto_id", nullable = false)
     private Produto produto;
-    
 }

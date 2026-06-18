@@ -38,5 +38,4 @@ public class Cliente {
 
     @OneToMany(mappedBy = "cliente")
     private java.util.List<Endereco> enderecos;
-
 }

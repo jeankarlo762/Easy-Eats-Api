@@ -39,7 +39,7 @@ public class VendaController {
     public ResponseEntity<Venda> buscarPorId(@PathVariable Integer id) {
         Optional<Venda> venda = service.buscarPorId(id);
         return venda.map(ResponseEntity::ok)
-                      .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
@@ -60,5 +60,4 @@ public class VendaController {
         }
         return ResponseEntity.notFound().build();
     }
-    
 }

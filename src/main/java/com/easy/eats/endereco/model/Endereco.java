@@ -32,6 +32,7 @@ public class Endereco {
     private String cidade;
     private Integer cep;
     private String complemento;
+    private String dt_alteracao;
 
     @ManyToOne
     @JoinColumn(name = "cliente_id", nullable = false)
