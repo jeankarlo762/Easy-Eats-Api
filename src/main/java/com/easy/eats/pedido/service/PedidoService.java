@@ -3,6 +3,7 @@ package com.easy.eats.pedido.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.easy.eats.pedido.bst.ArvorePedido;
 import com.easy.eats.pedido.model.Pedido;
 import com.easy.eats.pedido.repository.PedidoRepository;
 import com.easy.eats.venda.model.Venda;
@@ -25,7 +26,21 @@ public class PedidoService {
     }
 
     public Optional<Pedido> listarArvorePedido(Integer id) {
-        return repository.findById(id);
+        List<Pedido> todosPedidos = repository.findAll();
+
+        if (todosPedidos.isEmpty()) {
+            return Optional.empty();
+        }
+
+        ArvorePedido arvore = new ArvorePedido();
+
+        for (Pedido p : todosPedidos) {
+            arvore.inserir(p);
+        }
+
+        Pedido encontrado = arvore.buscar(id);
+
+        return Optional.ofNullable(encontrado);
     }
 
     public Optional<Pedido> buscarPorId(Integer id) {
