@@ -1,6 +1,7 @@
 package com.easy.eats.usuario.model;
 
 import com.easy.eats.empresa.model.model.Empresa;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.*;
@@ -11,6 +12,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+// Mesma razão da Empresa: Usuario chega ao Jackson como proxy do Hibernate
+// quando vem de getReferenceById (comanda, caixa), e os acessórios do proxy
+// quebrariam a serialização da resposta.
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 @Entity
 @Table(name = "TBUSUARIO")
 @Data

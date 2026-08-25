@@ -1,6 +1,7 @@
 package com.easy.eats.empresa.service;
 
 import java.text.Normalizer;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -42,6 +43,10 @@ public class EmpresaService {
         empresa.setId(null);
         empresa.setSegmento(segmentoDoIdRecebido(empresa.getSegmento()));
         empresa.setSlug(gerarSlugUnico(empresa.getNome(), null));
+        // Datas são responsabilidade do servidor: o cadastro pelo frontend não
+        // envia (nem deveria enviar) dtCriacao/dtAlteracao.
+        empresa.setDtCriacao(LocalDateTime.now());
+        empresa.setDtAlteracao(LocalDateTime.now());
         return repository.save(empresa);
     }
 
@@ -103,8 +108,9 @@ public class EmpresaService {
         empresaExistente.setEmail(empresa.getEmail());
         empresaExistente.setTelefone(empresa.getTelefone());
         empresaExistente.setFlAtivo(empresa.getFlAtivo());
-        empresaExistente.setDtCriacao(empresa.getDtCriacao());
-        empresaExistente.setDtAlteracao(empresa.getDtAlteracao());
+        // dtCriacao é imutável: copiá-la do corpo apagava a data original toda
+        // vez que a tela de empresas salvava (o payload não inclui esse campo).
+        empresaExistente.setDtAlteracao(LocalDateTime.now());
         empresaExistente.setSegmento(segmentoDoIdRecebido(empresa.getSegmento()));
 
         return repository.save(empresaExistente);

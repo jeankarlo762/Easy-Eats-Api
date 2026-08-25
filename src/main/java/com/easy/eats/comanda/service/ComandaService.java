@@ -124,6 +124,7 @@ public class ComandaService {
         Venda vendaCriada = vendaService.criar(venda);
 
         for (ItemVenda item : request.getItens()) {
+            validarItem(item);
             item.setId(null);
             Venda referenciaVenda = new Venda();
             referenciaVenda.setId(vendaCriada.getId());
@@ -167,6 +168,20 @@ public class ComandaService {
         mesaRepository.save(mesa);
 
         return salva;
+    }
+
+    /**
+     * Substitui a validação em cascata que o ItensComandaRequest não pode fazer
+     * (ver comentário lá): garante 400 com mensagem legível em vez de deixar a
+     * violação estourar como 500 no momento do persist.
+     */
+    private void validarItem(ItemVenda item) {
+        if (item.getQuantidade() == null || item.getQuantidade() <= 0) {
+            throw new IllegalArgumentException("A quantidade do item deve ser maior que zero");
+        }
+        if (item.getPreco_unitario() == null || item.getPreco_unitario() <= 0) {
+            throw new IllegalArgumentException("O preço unitário do item deve ser maior que zero");
+        }
     }
 
     private double somaItens(Comanda comanda) {

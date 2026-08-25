@@ -1,11 +1,18 @@
 package com.easy.eats.security;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -20,6 +27,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
@@ -104,9 +115,38 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/caixa/*/movimentacao")
                         .hasAnyRole("ADMINISTRADOR", "OPERADOR")
                         .anyRequest().authenticated())
+                // Sem isso o Spring Security usa o Http403ForbiddenEntryPoint e
+                // responde 403 tanto para "não autenticado" (token ausente ou
+                // expirado) quanto para "sem permissão", impossibilitando o
+                // frontend distinguir os dois casos — ele acabava derrubando a
+                // sessão do usuário em qualquer erro de permissão.
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, erro) -> escreverErro(response,
+                                HttpStatus.UNAUTHORIZED, "Sessão expirada ou inválida. Faça login novamente."))
+                        .accessDeniedHandler((request, response, erro) -> escreverErro(response,
+                                HttpStatus.FORBIDDEN, "Você não tem permissão para acessar este recurso.")))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    /**
+     * Mesmo formato de corpo do GlobalExceptionHandler
+     * ({@code {timestamp, status, erro, mensagem}}), para o frontend conseguir
+     * ler a mensagem com o mesmo utilitário em qualquer erro da API.
+     */
+    private void escreverErro(HttpServletResponse response, HttpStatus status, String mensagem) throws IOException {
+        response.setStatus(status.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+
+        Map<String, Object> corpo = new LinkedHashMap<>();
+        corpo.put("timestamp", LocalDateTime.now().toString());
+        corpo.put("status", status.value());
+        corpo.put("erro", status.getReasonPhrase());
+        corpo.put("mensagem", mensagem);
+
+        new ObjectMapper().writeValue(response.getOutputStream(), corpo);
     }
 }

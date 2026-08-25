@@ -3,6 +3,7 @@ package com.easy.eats.empresa.model.model;
 import java.time.LocalDateTime;
 
 import com.easy.eats.segmento.model.Segmento;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -19,6 +20,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Empresa é atribuída via {@code getReferenceById} em vários services (venda,
+ * pedido, comanda, caixa, produto...), então frequentemente chega ao Jackson
+ * como proxy do Hibernate. Sem ignorar os acessórios do proxy, a serialização
+ * tenta escrever {@code hibernateLazyInitializer}/{@code handler} e quebra a
+ * resposta.
+ */
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 @Entity
 @Table(name = "TBEMPRESA")
 @Getter

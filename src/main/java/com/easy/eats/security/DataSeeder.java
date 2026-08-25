@@ -15,6 +15,7 @@ import com.easy.eats.empresa.model.model.Empresa;
 import com.easy.eats.empresa.repository.EmpresaRepository;
 import com.easy.eats.mesa.model.Mesa;
 import com.easy.eats.mesa.repository.MesaRepository;
+import com.easy.eats.produto.enums.NaturezaProduto;
 import com.easy.eats.produto.model.Produto;
 import com.easy.eats.produto.repository.ProdutoRepository;
 import com.easy.eats.segmento.model.Funcionalidade;
@@ -54,17 +55,22 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        segmentoSeNaoExistir("Restaurante", "Operação com mesas e atendimento no salão",
+        Segmento restaurante = segmentoSeNaoExistir("Restaurante",
+                "Operação com mesas e atendimento no salão",
                 EnumSet.allOf(Funcionalidade.class));
 
-        Segmento foodTruck = segmentoSeNaoExistir("Food Truck",
+        segmentoSeNaoExistir("Food Truck",
                 "Operação de rua, sem mesas fixas: pedido, cozinha, delivery e estoque",
                 EnumSet.of(Funcionalidade.PEDIDO, Funcionalidade.COZINHA, Funcionalidade.DELIVERY,
                         Funcionalidade.ESTOQUE, Funcionalidade.COMPRAS, Funcionalidade.FINANCEIRO,
                         Funcionalidade.PRODUTOS, Funcionalidade.CLIENTES, Funcionalidade.USUARIOS,
                         Funcionalidade.CONFIGURACOES, Funcionalidade.CAIXA, Funcionalidade.CUPONS));
 
-        Empresa empresaDemo = empresaSeNaoExistir(foodTruck);
+        // A empresa de demonstração usa o segmento Restaurante: ela já nasce com
+        // mesas cadastradas logo abaixo, e o Food Truck não habilita OPERACAO —
+        // as telas de Mesas/Comandas ficavam inacessíveis e o fluxo de comanda,
+        // que é o principal do sistema, não podia ser exercitado na demo.
+        Empresa empresaDemo = empresaSeNaoExistir(restaurante);
         backfillSlug(empresaDemo);
         mesasSeNaoExistir(empresaDemo, 5);
         catalogoSeNaoExistir(empresaDemo);
@@ -100,11 +106,15 @@ public class DataSeeder implements CommandLineRunner {
         Categoria lanches = categoriaComProduto("Lanches", empresa);
         Categoria bebidas = categoriaComProduto("Bebidas", empresa);
 
-        produto("Hambúrguer Clássico", "Hambúrguer tradicional artesanal", 22.0, lanches, empresa);
-        produto("X-Bacon", "Hambúrguer com bacon crocante", 28.0, lanches, empresa);
-        produto("Hot Dog", "Cachorro-quente completo", 15.0, lanches, empresa);
-        produto("Coca-Cola", "Refrigerante gelado 350ml", 7.0, bebidas, empresa);
-        produto("Água Mineral", "500ml sem gás", 4.0, bebidas, empresa);
+        // A natureza precisa vir preenchida: é ela que faz o carrinho exibir
+        // composição e adicionais (só PREPARADO/REVENDA). Sem isso os produtos
+        // de exemplo abriam o modal de pedido vazio.
+        produto("Hambúrguer Clássico", "Hambúrguer tradicional artesanal", 22.0, NaturezaProduto.PREPARADO, lanches,
+                empresa);
+        produto("X-Bacon", "Hambúrguer com bacon crocante", 28.0, NaturezaProduto.PREPARADO, lanches, empresa);
+        produto("Hot Dog", "Cachorro-quente completo", 15.0, NaturezaProduto.PREPARADO, lanches, empresa);
+        produto("Coca-Cola", "Refrigerante gelado 350ml", 7.0, NaturezaProduto.REVENDA, bebidas, empresa);
+        produto("Água Mineral", "500ml sem gás", 4.0, NaturezaProduto.REVENDA, bebidas, empresa);
     }
 
     private Categoria categoriaComProduto(String nome, Empresa empresa) {
@@ -115,12 +125,14 @@ public class DataSeeder implements CommandLineRunner {
         return categoriaRepository.save(categoria);
     }
 
-    private void produto(String nome, String descricao, Double preco, Categoria categoria, Empresa empresa) {
+    private void produto(String nome, String descricao, Double preco, NaturezaProduto natureza, Categoria categoria,
+            Empresa empresa) {
         Produto produto = new Produto();
         produto.setNome(nome);
         produto.setDescricao(descricao);
         produto.setPreco(preco);
         produto.setFlAtivo(true);
+        produto.setNatureza(natureza);
         produto.setCategoria(categoria);
         produto.setEmpresa(empresa);
         produtoRepository.save(produto);
