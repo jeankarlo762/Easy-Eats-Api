@@ -3,6 +3,7 @@ package com.easy.eats.pedido.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.easy.eats.pedido.dto.RelatorioCozinha;
 import com.easy.eats.pedido.model.Pedido;
 import com.easy.eats.pedido.service.PedidoService;
 
@@ -78,5 +79,10 @@ public class PedidoController {
     @PutMapping("/{id}/pronto")
     public ResponseEntity<Pedido> marcarPronto(@PathVariable Integer id) {
         return ResponseEntity.ok(service.marcarComoPronto(id));
+    }
+
+    @GetMapping("/relatorio-cozinha")
+    public ResponseEntity<RelatorioCozinha> relatorioCozinha() {
+        return ResponseEntity.ok(service.relatorioCozinha());
     }
 }

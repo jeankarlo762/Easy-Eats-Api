@@ -100,10 +100,12 @@ public class SecurityConfig {
                         // JwtAuthenticationFilter não quebra requests sem header Authorization,
                         // então não precisa de ajuste no filtro para liberar isso.
                         .requestMatchers("/public/**").permitAll()
-                        // Precisa vir antes do matcher genérico de /empresa/** (SUPERADMIN):
+                        // Precisam vir antes do matcher genérico de /empresa/** (SUPERADMIN):
                         // o administrador da própria empresa pode editar o slug do link público
-                        // sem precisar das permissões amplas de SUPERADMIN sobre Empresa.
+                        // e os dados do próprio estabelecimento (tela de Configurações) sem
+                        // precisar das permissões amplas de SUPERADMIN sobre Empresa.
                         .requestMatchers(HttpMethod.PUT, "/empresa/*/slug").hasAnyRole("SUPERADMIN", "ADMINISTRADOR")
+                        .requestMatchers("/empresa/minha-empresa").hasAnyRole("SUPERADMIN", "ADMINISTRADOR")
                         .requestMatchers("/empresa/**").hasRole("SUPERADMIN")
                         .requestMatchers("/segmentos/**").hasRole("SUPERADMIN")
                         .requestMatchers("/usuarios/**").hasAnyRole("SUPERADMIN", "ADMINISTRADOR")

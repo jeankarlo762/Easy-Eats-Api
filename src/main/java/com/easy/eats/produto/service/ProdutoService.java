@@ -69,9 +69,19 @@ public class ProdutoService {
         return repository.save(existente);
     }
 
+    /**
+     * Desativa em vez de apagar fisicamente: Adicional, ComposicaoItem,
+     * ItemCardapio e ItemVenda referenciam produto_id com NOT NULL e sem
+     * cascade — assim que existir venda histórica com este produto, um
+     * DELETE físico falharia por violação de constraint (ou, pior, apagaria
+     * dados que relatórios futuros precisam). flAtivo já existe exatamente
+     * para este caso; as listagens (ex.: novo-pedido) já filtram por ele.
+     */
     public void deletar(Integer id) {
-        buscarPorId(id);
-        repository.deleteById(id);
+        Produto produto = buscarPorId(id);
+        produto.setFlAtivo(false);
+        produto.setDtAlteracao(LocalDateTime.now());
+        repository.save(produto);
     }
 
     private Categoria categoriaDaMesmaEmpresa(Categoria categoriaRecebida) {

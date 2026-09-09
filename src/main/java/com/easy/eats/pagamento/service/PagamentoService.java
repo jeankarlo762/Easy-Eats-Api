@@ -6,10 +6,12 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.easy.eats.caixa.enums.StatusCaixa;
 import com.easy.eats.caixa.model.Caixa;
 import com.easy.eats.caixa.repository.CaixaRepository;
 import com.easy.eats.comanda.model.Comanda;
 import com.easy.eats.comanda.repository.ComandaRepository;
+import com.easy.eats.notificacao.service.NotificacaoService;
 import com.easy.eats.pagamento.model.Pagamento;
 import com.easy.eats.pagamento.repository.PagamentoRepository;
 import com.easy.eats.security.SecurityUtils;
@@ -31,6 +33,9 @@ public class PagamentoService {
     @Autowired
     CaixaRepository caixaRepository;
 
+    @Autowired
+    NotificacaoService notificacaoService;
+
     public Pagamento criar(Pagamento pagamento) {
         pagamento.setId(null);
 
@@ -51,7 +56,12 @@ public class PagamentoService {
 
         pagamento.setCaixa(caixaAbertoDaEmpresa());
 
-        return repository.save(pagamento);
+        Pagamento salvo = repository.save(pagamento);
+
+        notificacaoService.notificarEmpresa(SecurityUtils.getEmpresaId(), "bi-cash-coin", "verde",
+                "Pagamento confirmado", "Recebido via " + salvo.getMetodo() + " — R$ " + salvo.getValor() + ".");
+
+        return salvo;
     }
 
     /**
@@ -61,7 +71,7 @@ public class PagamentoService {
      */
     private Caixa caixaAbertoDaEmpresa() {
         try {
-            return caixaRepository.findByEmpresaIdAndStatus(SecurityUtils.getEmpresaId(), "ABERTO").orElse(null);
+            return caixaRepository.findByEmpresaIdAndStatus(SecurityUtils.getEmpresaId(), StatusCaixa.ABERTO).orElse(null);
         } catch (IllegalStateException semUsuarioAutenticado) {
             return null;
         }

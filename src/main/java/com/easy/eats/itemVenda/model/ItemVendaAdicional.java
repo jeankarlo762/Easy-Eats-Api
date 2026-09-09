@@ -1,5 +1,7 @@
 package com.easy.eats.itemVenda.model;
 
+import java.math.BigDecimal;
+
 import com.easy.eats.adicional.model.Adicional;
 
 import jakarta.persistence.Entity;
@@ -46,5 +48,5 @@ public class ItemVendaAdicional {
     private Integer quantidade;
 
     private String nome;
-    private Double preco;
+    private BigDecimal preco;
 }

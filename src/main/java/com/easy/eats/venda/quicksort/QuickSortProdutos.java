@@ -1,5 +1,6 @@
 package com.easy.eats.venda.quicksort;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class QuickSortProdutos {
@@ -17,11 +18,11 @@ public class QuickSortProdutos {
     }
 
     private int particionar(List<ProdutoRanking> lista, int inicio, int fim) {
-        double pivo = lista.get(fim).getFaturamentoTotal();
+        BigDecimal pivo = lista.get(fim).getFaturamentoTotal();
         int i = inicio - 1;
 
         for (int j = inicio; j < fim; j++) {
-            if (lista.get(j).getFaturamentoTotal() >= pivo) {
+            if (lista.get(j).getFaturamentoTotal().compareTo(pivo) >= 0) {
                 i++;
                 ProdutoRanking temp = lista.get(i);
                 lista.set(i, lista.get(j));

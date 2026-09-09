@@ -1,5 +1,6 @@
 package com.easy.eats.cliente.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,10 +24,15 @@ public class ClienteService {
     public Cliente criar(Cliente cliente) {
         cliente.setId(null);
         cliente.setEmpresa(empresaRepository.getReferenceById(SecurityUtils.getEmpresaId()));
+        // Nada preenchia essas datas — todo cliente nascia sem registro de
+        // quando foi cadastrado (mesmo bug já corrigido em Venda.dt_criacao).
+        cliente.setDt_criacao(LocalDateTime.now().toString());
+        cliente.setDt_alteracao(LocalDateTime.now().toString());
         return repository.save(cliente);
     }
 
     public Cliente salvar(Cliente cliente) {
+        cliente.setDt_alteracao(LocalDateTime.now().toString());
         return repository.save(cliente);
     }
 

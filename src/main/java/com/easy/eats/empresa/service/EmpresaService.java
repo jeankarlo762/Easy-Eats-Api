@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.easy.eats.empresa.model.model.Empresa;
 import com.easy.eats.empresa.repository.EmpresaRepository;
+import com.easy.eats.notificacao.service.NotificacaoService;
 import com.easy.eats.security.SecurityUtils;
 import com.easy.eats.segmento.model.Funcionalidade;
 import com.easy.eats.segmento.model.Segmento;
@@ -19,10 +20,13 @@ import com.easy.eats.segmento.repository.SegmentoRepository;
 public class EmpresaService {
     private final EmpresaRepository repository;
     private final SegmentoRepository segmentoRepository;
+    private final NotificacaoService notificacaoService;
 
-    public EmpresaService(EmpresaRepository repository, SegmentoRepository segmentoRepository) {
+    public EmpresaService(EmpresaRepository repository, SegmentoRepository segmentoRepository,
+            NotificacaoService notificacaoService) {
         this.repository = repository;
         this.segmentoRepository = segmentoRepository;
+        this.notificacaoService = notificacaoService;
     }
 
     public List<Empresa> listarTodos() {
@@ -47,7 +51,12 @@ public class EmpresaService {
         // envia (nem deveria enviar) dtCriacao/dtAlteracao.
         empresa.setDtCriacao(LocalDateTime.now());
         empresa.setDtAlteracao(LocalDateTime.now());
-        return repository.save(empresa);
+        Empresa salva = repository.save(empresa);
+
+        notificacaoService.notificarPlataforma("bi-building-add", "azul", "Nova empresa cadastrada",
+                "\"" + salva.getNome() + "\" se cadastrou na plataforma.");
+
+        return salva;
     }
 
     /**
@@ -118,6 +127,28 @@ public class EmpresaService {
 
     public void deletar(Integer id) {
         repository.deleteById(id);
+    }
+
+    /**
+     * Autoatendimento do ADMINISTRADOR sobre a própria empresa — o resto de
+     * /empresa/** é SUPERADMIN-only, então sem isso a empresa cliente não
+     * tinha como ver ou editar nem os próprios dados de estabelecimento
+     * (nome, endereço, horário de funcionamento).
+     */
+    public Empresa buscarMinhaEmpresa() {
+        return buscarPorId(SecurityUtils.getEmpresaId());
+    }
+
+    public Empresa atualizarMinhaEmpresa(Empresa dados) {
+        Empresa existente = buscarMinhaEmpresa();
+
+        existente.setNome(dados.getNome());
+        existente.setTelefone(dados.getTelefone());
+        existente.setEndereco(dados.getEndereco());
+        existente.setHorarioFuncionamento(dados.getHorarioFuncionamento());
+        existente.setDtAlteracao(LocalDateTime.now());
+
+        return repository.save(existente);
     }
 
     /**

@@ -1,5 +1,7 @@
 package com.easy.eats.itemCardapio.model;
 
+import java.math.BigDecimal;
+
 import com.easy.eats.cardapio.model.Cardapio;
 import com.easy.eats.produto.model.Produto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -47,7 +49,7 @@ public class ItemCardapio {
 
     private Integer ordem;
     private Boolean disponivel;
-    private Double precoOverride;
+    private BigDecimal precoOverride;
     private String descricaoOverride;
     private String fotoUrl;
 }

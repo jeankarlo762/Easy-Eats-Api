@@ -1,9 +1,14 @@
 package com.easy.eats.movimentacaoFinanceira.model;
 
+import java.math.BigDecimal;
+
 import com.easy.eats.caixa.model.Caixa;
 import com.easy.eats.empresa.model.model.Empresa;
+import com.easy.eats.movimentacaoFinanceira.enums.TipoMovimentacao;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -30,14 +35,15 @@ public class MovimentacaoFinanceira {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotBlank(message = "O tipo é obrigatório")
-    private String tipo;
+    @NotNull(message = "O tipo é obrigatório")
+    @Enumerated(EnumType.STRING)
+    private TipoMovimentacao tipo;
 
     @NotBlank(message = "A categoria é obrigatória")
     private String categoria;
 
     @NotNull(message = "O valor é obrigatório")
-    private Double valor;
+    private BigDecimal valor;
 
     private String descricao;
     private String dt_alteracao;

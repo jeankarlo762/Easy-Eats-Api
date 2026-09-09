@@ -1,5 +1,6 @@
 package com.easy.eats.caixa.controller;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,14 +32,14 @@ public class CaixaController {
 
     @PostMapping("/abrir")
     public ResponseEntity<Caixa> abrir(@RequestBody Map<String, Object> body) {
-        Double valorInicial = numeroDoBody(body.get("valorInicial"));
+        BigDecimal valorInicial = numeroDoBody(body.get("valorInicial"));
         String observacoes = (String) body.get("observacoes");
         return ResponseEntity.ok(service.abrir(valorInicial, observacoes));
     }
 
     @PutMapping("/{id}/fechar")
     public ResponseEntity<Caixa> fechar(@PathVariable Integer id, @RequestBody Map<String, Object> body) {
-        Double valorApuradoInformado = numeroDoBody(body.get("valorApuradoInformado"));
+        BigDecimal valorApuradoInformado = numeroDoBody(body.get("valorApuradoInformado"));
         String observacoes = (String) body.get("observacoes");
         return ResponseEntity.ok(service.fechar(id, valorApuradoInformado, observacoes));
     }
@@ -47,12 +48,19 @@ public class CaixaController {
     public ResponseEntity<MovimentacaoFinanceira> movimentacao(@PathVariable Integer id,
             @RequestBody Map<String, Object> body) {
         String tipo = (String) body.get("tipo");
-        Double valor = numeroDoBody(body.get("valor"));
+        BigDecimal valor = numeroDoBody(body.get("valor"));
         String descricao = (String) body.get("descricao");
         return ResponseEntity.ok(service.registrarMovimentacao(id, tipo, valor, descricao));
     }
 
-    private Double numeroDoBody(Object valor) {
-        return valor == null ? null : ((Number) valor).doubleValue();
+    /**
+     * O corpo chega como Map genérico (não um DTO tipado), então o valor
+     * numérico vem como Integer/Double conforme o JSON recebido. Construir o
+     * BigDecimal a partir do texto (via toString) evita herdar a imprecisão
+     * binária de um double intermediário — new BigDecimal(número.doubleValue())
+     * arrastaria o mesmo erro de ponto flutuante que motivou esta migração.
+     */
+    private BigDecimal numeroDoBody(Object valor) {
+        return valor == null ? null : new BigDecimal(valor.toString());
     }
 }

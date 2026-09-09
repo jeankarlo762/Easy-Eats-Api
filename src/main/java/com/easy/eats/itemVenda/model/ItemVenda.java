@@ -1,5 +1,7 @@
 package com.easy.eats.itemVenda.model;
 
+import java.math.BigDecimal;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,11 +44,11 @@ public class ItemVenda {
 
     @NotNull(message = "O preço unitário é obrigatório")
     @Positive(message = "O preço unitário deve ser maior que zero")
-    private Double preco_unitario;
+    private BigDecimal preco_unitario;
 
-    private Double custo_unitario;
-    private Double valor_total;
-    private Double desconto;
+    private BigDecimal custo_unitario;
+    private BigDecimal valor_total;
+    private BigDecimal desconto;
     private String dt_alteracao;
 
     /** Observação do item (ex.: "sem cebola", "bem passado"). */

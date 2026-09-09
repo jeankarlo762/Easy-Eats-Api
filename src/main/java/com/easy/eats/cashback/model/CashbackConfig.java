@@ -1,5 +1,7 @@
 package com.easy.eats.cashback.model;
 
+import java.math.BigDecimal;
+
 import com.easy.eats.empresa.model.model.Empresa;
 
 import jakarta.persistence.Entity;
@@ -31,9 +33,9 @@ public class CashbackConfig {
 
     @NotNull(message = "O percentual de acúmulo é obrigatório")
     @PositiveOrZero(message = "O percentual não pode ser negativo")
-    private Double percentualAcumulo;
+    private BigDecimal percentualAcumulo;
 
-    private Double valorMinimoParaAcumular;
+    private BigDecimal valorMinimoParaAcumular;
     private Boolean flAtivo;
 
     @ManyToOne

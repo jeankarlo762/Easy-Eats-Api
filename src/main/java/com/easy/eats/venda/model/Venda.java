@@ -1,7 +1,10 @@
 package com.easy.eats.venda.model;
 
+import java.math.BigDecimal;
+
 import java.util.List;
 
+import com.easy.eats.cliente.model.Cliente;
 import com.easy.eats.comanda.model.Comanda;
 import com.easy.eats.empresa.model.model.Empresa;
 import com.easy.eats.itemVenda.model.ItemVenda;
@@ -45,8 +48,8 @@ public class Venda {
     private String tipo;
 
     private String origem;
-    private Double valor_total;
-    private Double desconto;
+    private BigDecimal valor_total;
+    private BigDecimal desconto;
     private String dt_fechamento;
     private String dt_criacao;
     private String dt_alteracao;
@@ -70,9 +73,23 @@ public class Venda {
     private Mesa mesa;
 
     /**
-     * Nome do cliente para pedidos sem mesa (balcão/retirada/delivery).
+     * Nome do cliente para pedidos sem mesa (balcão/retirada/delivery), ou
+     * quando o cliente atendido não é (ainda) um {@link Cliente} cadastrado.
      */
     private String nomeCliente;
+
+    /**
+     * Opcional: vincula a venda a um Cliente cadastrado, base para o
+     * histórico de compras e para cupom/cashback saberem de quem descontar
+     * ou creditar. Sem isso, esses dois módulos ficavam sem qualquer forma de
+     * identificar o cliente por trás de uma venda — só o texto livre
+     * nomeCliente, que não é uma chave estável (mesmo nome, clientes
+     * diferentes; ou o mesmo cliente digitado de formas diferentes).
+     */
+    @JsonIgnoreProperties({ "enderecos", "empresa" })
+    @ManyToOne
+    @JoinColumn(name = "cliente_id")
+    private Cliente cliente;
 
     /**
      * Opcional: comanda à qual esta rodada de pedido pertence (módulo de

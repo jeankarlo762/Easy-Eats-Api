@@ -3,7 +3,7 @@ package com.easy.eats.usuario.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.easy.eats.empresa.repository.EmpresaRepository;
@@ -17,13 +17,18 @@ import com.easy.eats.usuario.repository.UsuarioRepository;
 public class UsuarioService {
 
     private final UsuarioRepository repository;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    // Injeta o bean central definido em SecurityConfig em vez de instanciar um
+    // BCryptPasswordEncoder próprio: os dois usam o mesmo algoritmo hoje, mas
+    // uma troca futura no encoder central (ex.: aumentar o custo do BCrypt)
+    // silenciosamente deixaria de valer para senhas criadas por aqui.
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
     private EmpresaRepository empresaRepository;
 
-    public UsuarioService(UsuarioRepository repository) {
+    public UsuarioService(UsuarioRepository repository, PasswordEncoder passwordEncoder) {
         this.repository = repository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public List<Usuario> listarTodos() {
@@ -50,6 +55,9 @@ public class UsuarioService {
     public Usuario salvar(Usuario usuario) {
         if (usuario.getSenha() == null || usuario.getSenha().isBlank()) {
             throw new IllegalArgumentException("A senha é obrigatória");
+        }
+        if (repository.findByEmail(usuario.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Já existe um usuário cadastrado com este e-mail");
         }
 
         AuthenticatedUser criador = SecurityUtils.getUsuarioAutenticado();
@@ -78,6 +86,11 @@ public class UsuarioService {
 
         Usuario existente = buscarPorId(id);
         AuthenticatedUser autenticado = SecurityUtils.getUsuarioAutenticado();
+
+        if (usuario.getEmail() != null && !usuario.getEmail().equalsIgnoreCase(existente.getEmail())
+                && repository.findByEmail(usuario.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Já existe um usuário cadastrado com este e-mail");
+        }
 
         existente.setNome(usuario.getNome());
         existente.setEmail(usuario.getEmail());

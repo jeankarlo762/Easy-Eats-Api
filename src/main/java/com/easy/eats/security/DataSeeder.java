@@ -1,5 +1,6 @@
 package com.easy.eats.security;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.List;
@@ -13,6 +14,7 @@ import com.easy.eats.categoria.model.Categoria;
 import com.easy.eats.categoria.repository.CategoriaRepository;
 import com.easy.eats.empresa.model.model.Empresa;
 import com.easy.eats.empresa.repository.EmpresaRepository;
+import com.easy.eats.mesa.enums.StatusMesa;
 import com.easy.eats.mesa.model.Mesa;
 import com.easy.eats.mesa.repository.MesaRepository;
 import com.easy.eats.produto.enums.NaturezaProduto;
@@ -92,7 +94,7 @@ public class DataSeeder implements CommandLineRunner {
         for (int numero = 1; numero <= quantidade; numero++) {
             Mesa mesa = new Mesa();
             mesa.setNumero(numero);
-            mesa.setStatus("LIVRE");
+            mesa.setStatus(StatusMesa.LIVRE);
             mesa.setEmpresa(empresa);
             mesaRepository.save(mesa);
         }
@@ -109,12 +111,12 @@ public class DataSeeder implements CommandLineRunner {
         // A natureza precisa vir preenchida: é ela que faz o carrinho exibir
         // composição e adicionais (só PREPARADO/REVENDA). Sem isso os produtos
         // de exemplo abriam o modal de pedido vazio.
-        produto("Hambúrguer Clássico", "Hambúrguer tradicional artesanal", 22.0, NaturezaProduto.PREPARADO, lanches,
+        produto("Hambúrguer Clássico", "Hambúrguer tradicional artesanal", new BigDecimal("22.00"), NaturezaProduto.PREPARADO, lanches,
                 empresa);
-        produto("X-Bacon", "Hambúrguer com bacon crocante", 28.0, NaturezaProduto.PREPARADO, lanches, empresa);
-        produto("Hot Dog", "Cachorro-quente completo", 15.0, NaturezaProduto.PREPARADO, lanches, empresa);
-        produto("Coca-Cola", "Refrigerante gelado 350ml", 7.0, NaturezaProduto.REVENDA, bebidas, empresa);
-        produto("Água Mineral", "500ml sem gás", 4.0, NaturezaProduto.REVENDA, bebidas, empresa);
+        produto("X-Bacon", "Hambúrguer com bacon crocante", new BigDecimal("28.00"), NaturezaProduto.PREPARADO, lanches, empresa);
+        produto("Hot Dog", "Cachorro-quente completo", new BigDecimal("15.00"), NaturezaProduto.PREPARADO, lanches, empresa);
+        produto("Coca-Cola", "Refrigerante gelado 350ml", new BigDecimal("7.00"), NaturezaProduto.REVENDA, bebidas, empresa);
+        produto("Água Mineral", "500ml sem gás", new BigDecimal("4.00"), NaturezaProduto.REVENDA, bebidas, empresa);
     }
 
     private Categoria categoriaComProduto(String nome, Empresa empresa) {
@@ -125,7 +127,7 @@ public class DataSeeder implements CommandLineRunner {
         return categoriaRepository.save(categoria);
     }
 
-    private void produto(String nome, String descricao, Double preco, NaturezaProduto natureza, Categoria categoria,
+    private void produto(String nome, String descricao, BigDecimal preco, NaturezaProduto natureza, Categoria categoria,
             Empresa empresa) {
         Produto produto = new Produto();
         produto.setNome(nome);

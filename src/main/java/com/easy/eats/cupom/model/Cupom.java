@@ -1,10 +1,15 @@
 package com.easy.eats.cupom.model;
 
+import java.math.BigDecimal;
+
 import java.time.LocalDateTime;
 
+import com.easy.eats.cupom.enums.TipoDesconto;
 import com.easy.eats.empresa.model.model.Empresa;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -35,13 +40,13 @@ public class Cupom {
     @NotBlank(message = "O código do cupom é obrigatório")
     private String codigo;
 
-    // PERCENTUAL | VALOR_FIXO
-    @NotBlank(message = "O tipo de desconto é obrigatório")
-    private String tipoDesconto;
+    @NotNull(message = "O tipo de desconto é obrigatório")
+    @Enumerated(EnumType.STRING)
+    private TipoDesconto tipoDesconto;
 
     @NotNull(message = "O valor do desconto é obrigatório")
     @Positive(message = "O valor do desconto deve ser maior que zero")
-    private Double valorDesconto;
+    private BigDecimal valorDesconto;
 
     private LocalDateTime dtValidadeInicio;
     private LocalDateTime dtValidadeFim;
@@ -51,7 +56,7 @@ public class Cupom {
     private Integer limiteUsoTotal;
     private Integer limiteUsoPorCliente;
 
-    private Double valorMinimoPedido;
+    private BigDecimal valorMinimoPedido;
     private Boolean flAtivo;
 
     @ManyToOne

@@ -47,6 +47,15 @@ public class Pedido {
 
     private LocalDateTime dataCriacao;
 
+    /**
+     * Marcados em {@link com.easy.eats.pedido.service.PedidoService#iniciarPreparo}
+     * e {@link com.easy.eats.pedido.service.PedidoService#marcarComoPronto} — sem
+     * isso não havia como medir tempo de preparo nenhum, base do Relatório da
+     * Cozinha.
+     */
+    private LocalDateTime dtInicioPreparo;
+    private LocalDateTime dtPronto;
+
     @ManyToOne
     @JoinColumn(name = "empresa_id")
     private Empresa empresa;

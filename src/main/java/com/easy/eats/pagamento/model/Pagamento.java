@@ -1,5 +1,7 @@
 package com.easy.eats.pagamento.model;
 
+import java.math.BigDecimal;
+
 import com.easy.eats.caixa.model.Caixa;
 import com.easy.eats.comanda.model.Comanda;
 import com.easy.eats.venda.model.Venda;
@@ -38,7 +40,7 @@ public class Pagamento {
 
     @NotNull(message = "O valor é obrigatório")
     @Positive(message = "O valor deve ser maior que zero")
-    private Double valor;
+    private BigDecimal valor;
 
     @NotBlank(message = "O status é obrigatório")
     private String status;

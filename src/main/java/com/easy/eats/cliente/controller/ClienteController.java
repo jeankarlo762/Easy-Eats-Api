@@ -50,6 +50,7 @@ public class ClienteController {
             clienteExistente.setNome(clienteAtualizado.getNome());
             clienteExistente.setEmail(clienteAtualizado.getEmail());
             clienteExistente.setTelefone(clienteAtualizado.getTelefone());
+            clienteExistente.setCpf(clienteAtualizado.getCpf());
             clienteExistente.setEndereco(clienteAtualizado.getEndereco());
             Cliente clienteSalvo = service.salvar(clienteExistente);
             return ResponseEntity.ok(clienteSalvo);

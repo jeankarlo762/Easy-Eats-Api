@@ -1,5 +1,7 @@
 package com.easy.eats.produto.model;
 
+import java.math.BigDecimal;
+
 import java.time.LocalDateTime;
 
 import com.easy.eats.categoria.model.Categoria;
@@ -41,10 +43,10 @@ public class Produto {
 
     @NotNull(message = "O preço é obrigatório")
     @PositiveOrZero(message = "O preço não pode ser negativo")
-    private Double preco;
+    private BigDecimal preco;
 
     @PositiveOrZero(message = "O custo não pode ser negativo")
-    private Double custo;
+    private BigDecimal custo;
 
     private Boolean flAtivo;
     private LocalDateTime dtAlteracao;

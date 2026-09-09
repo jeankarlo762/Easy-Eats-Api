@@ -14,4 +14,7 @@ public interface VendaRepository extends JpaRepository<Venda, Integer> {
     List<Venda> findAllByEmpresaId(Integer empresaId);
 
     Optional<Venda> findByIdAndEmpresaId(Integer id, Integer empresaId);
+
+    /** Histórico de compras do cliente — base para fidelidade e cashback. */
+    List<Venda> findAllByCliente_IdAndEmpresaId(Integer clienteId, Integer empresaId);
 }

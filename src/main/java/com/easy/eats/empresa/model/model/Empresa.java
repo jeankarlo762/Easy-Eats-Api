@@ -52,6 +52,8 @@ public class Empresa {
     private String email;
 
     private String telefone;
+    private String endereco;
+    private String horarioFuncionamento;
     private Boolean flAtivo;
     private LocalDateTime dtCriacao;
     private LocalDateTime dtAlteracao;

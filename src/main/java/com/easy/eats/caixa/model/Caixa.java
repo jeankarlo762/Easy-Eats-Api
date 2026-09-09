@@ -1,11 +1,16 @@
 package com.easy.eats.caixa.model;
 
+import java.math.BigDecimal;
+
 import java.time.LocalDateTime;
 
+import com.easy.eats.caixa.enums.StatusCaixa;
 import com.easy.eats.empresa.model.model.Empresa;
 import com.easy.eats.usuario.model.Usuario;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -35,15 +40,15 @@ public class Caixa {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    // ABERTO | FECHADO
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private StatusCaixa status;
 
     @NotNull(message = "O valor inicial é obrigatório")
-    private Double valorInicial;
+    private BigDecimal valorInicial;
 
-    private Double valorApuradoInformado;
-    private Double valorApuradoSistema;
-    private Double diferenca;
+    private BigDecimal valorApuradoInformado;
+    private BigDecimal valorApuradoSistema;
+    private BigDecimal diferenca;
 
     private LocalDateTime dtAbertura;
     private LocalDateTime dtFechamento;

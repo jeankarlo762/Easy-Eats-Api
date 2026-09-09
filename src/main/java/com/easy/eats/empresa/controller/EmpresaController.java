@@ -61,4 +61,14 @@ public class EmpresaController {
         return ResponseEntity.ok(service.atualizarSlug(id, body.get("slug")));
     }
 
+    @GetMapping("/minha-empresa")
+    public ResponseEntity<Empresa> buscarMinhaEmpresa() {
+        return ResponseEntity.ok(service.buscarMinhaEmpresa());
+    }
+
+    @PutMapping("/minha-empresa")
+    public ResponseEntity<Empresa> atualizarMinhaEmpresa(@RequestBody Empresa empresa) {
+        return ResponseEntity.ok(service.atualizarMinhaEmpresa(empresa));
+    }
+
 }

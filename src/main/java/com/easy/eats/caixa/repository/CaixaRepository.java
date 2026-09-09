@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import com.easy.eats.caixa.enums.StatusCaixa;
 import com.easy.eats.caixa.model.Caixa;
 
 @Repository
@@ -15,5 +16,5 @@ public interface CaixaRepository extends JpaRepository<Caixa, Integer> {
 
     Optional<Caixa> findByIdAndEmpresaId(Integer id, Integer empresaId);
 
-    Optional<Caixa> findByEmpresaIdAndStatus(Integer empresaId, String status);
+    Optional<Caixa> findByEmpresaIdAndStatus(Integer empresaId, StatusCaixa status);
 }

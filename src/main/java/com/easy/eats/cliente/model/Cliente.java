@@ -1,5 +1,7 @@
 package com.easy.eats.cliente.model;
 
+import java.math.BigDecimal;
+
 import com.easy.eats.empresa.model.model.Empresa;
 import com.easy.eats.endereco.model.Endereco;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -46,6 +48,8 @@ public class Cliente {
     @NotBlank(message = "O telefone é obrigatório")
     private String telefone;
 
+    private String cpf;
+
     private String endereco;
     private String dt_criacao;
     private String dt_alteracao;
@@ -53,7 +57,7 @@ public class Cliente {
     // Saldo acumulado de cashback (módulo de Cupons/Cashback). O crédito e o
     // débito de saldo entram junto com o checkout do link público — aqui só o
     // campo é criado, ainda sem lógica de acúmulo automático.
-    private Double saldoCashback;
+    private BigDecimal saldoCashback;
 
     @OneToMany(mappedBy = "cliente")
     @JsonIgnoreProperties("cliente")

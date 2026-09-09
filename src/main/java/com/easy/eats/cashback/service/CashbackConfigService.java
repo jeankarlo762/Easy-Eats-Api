@@ -1,5 +1,7 @@
 package com.easy.eats.cashback.service;
 
+import java.math.BigDecimal;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +23,7 @@ public class CashbackConfigService {
         Integer empresaId = SecurityUtils.getEmpresaId();
         return repository.findByEmpresaId(empresaId).orElseGet(() -> {
             CashbackConfig config = new CashbackConfig();
-            config.setPercentualAcumulo(0.0);
+            config.setPercentualAcumulo(BigDecimal.ZERO);
             config.setFlAtivo(false);
             config.setEmpresa(empresaRepository.getReferenceById(empresaId));
             return repository.save(config);

@@ -47,12 +47,10 @@ public class VendaController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Venda> atualizar(@PathVariable Integer id, @Valid @RequestBody Venda vendaAtualizado) {
-        return service.buscarPorId(id).map(vendaExistente -> {
-            vendaExistente.setStatus(vendaAtualizado.getStatus());
-            vendaExistente.setTipo(vendaAtualizado.getTipo());
-            Venda vendaSalvo = service.salvar(vendaExistente);
-            return ResponseEntity.ok(vendaSalvo);
-        }).orElseGet(() -> ResponseEntity.notFound().build());
+        return service.buscarPorId(id)
+                .map(vendaExistente -> ResponseEntity
+                        .ok(service.atualizarStatus(vendaExistente, vendaAtualizado.getStatus(), vendaAtualizado.getTipo())))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
@@ -67,6 +65,12 @@ public class VendaController {
     @GetMapping("/ranking")
     public ResponseEntity<List<ProdutoRanking>> rankingProdutos() {
         return ResponseEntity.ok(service.rankingProdutos());
+    }
+
+    /** Histórico de compras de um cliente cadastrado — base para fidelidade e cashback. */
+    @GetMapping("/cliente/{clienteId}")
+    public ResponseEntity<List<Venda>> listarPorCliente(@PathVariable Integer clienteId) {
+        return ResponseEntity.ok(service.listarPorCliente(clienteId));
     }
 
 }

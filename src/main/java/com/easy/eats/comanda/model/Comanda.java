@@ -1,8 +1,11 @@
 package com.easy.eats.comanda.model;
 
+import java.math.BigDecimal;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.easy.eats.comanda.enums.StatusComanda;
 import com.easy.eats.empresa.model.model.Empresa;
 import com.easy.eats.mesa.model.Mesa;
 import com.easy.eats.usuario.model.Usuario;
@@ -11,6 +14,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -46,11 +51,11 @@ public class Comanda {
     @NotNull(message = "O número da comanda é obrigatório")
     private Integer numero;
 
-    // ABERTA | FECHADA
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private StatusComanda status;
 
     private String nomeCliente;
-    private Double valorTotal;
+    private BigDecimal valorTotal;
     private LocalDateTime dtAbertura;
     private LocalDateTime dtFechamento;
 

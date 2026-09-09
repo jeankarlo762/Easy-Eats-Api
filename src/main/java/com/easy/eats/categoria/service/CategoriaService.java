@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.easy.eats.categoria.model.Categoria;
 import com.easy.eats.categoria.repository.CategoriaRepository;
 import com.easy.eats.empresa.repository.EmpresaRepository;
+import com.easy.eats.produto.repository.ProdutoRepository;
 import com.easy.eats.security.SecurityUtils;
 
 @Service
@@ -17,6 +18,9 @@ public class CategoriaService {
 
     @Autowired
     private EmpresaRepository empresaRepository;
+
+    @Autowired
+    private ProdutoRepository produtoRepository;
 
     public CategoriaService(CategoriaRepository repository) {
         this.repository = repository;
@@ -43,6 +47,9 @@ public class CategoriaService {
     public Categoria salvar(Categoria categoria) {
         categoria.setId(null);
         categoria.setEmpresa(empresaRepository.getReferenceById(SecurityUtils.getEmpresaId()));
+        if (categoria.getFlativo() == null) {
+            categoria.setFlativo(true);
+        }
         return repository.save(categoria);
     }
 
@@ -58,8 +65,19 @@ public class CategoriaService {
         return repository.save(categoriaExistente);
     }
 
+    /**
+     * Categoria.produto é @ManyToOne sem nullable=false: sem esta checagem, um
+     * DELETE aqui não falhava — apagava a categoria e deixava categoria_id NULL
+     * nos produtos vinculados, desassociando-os silenciosamente. Bloquear com
+     * uma mensagem clara é mais seguro do que depender do comportamento
+     * default da FK opcional.
+     */
     public void deletar(Integer id) {
         buscarPorId(id);
+        if (produtoRepository.existsByCategoriaId(id)) {
+            throw new IllegalArgumentException(
+                    "Não é possível excluir esta categoria: há produtos vinculados a ela.");
+        }
         repository.deleteById(id);
     }
 }

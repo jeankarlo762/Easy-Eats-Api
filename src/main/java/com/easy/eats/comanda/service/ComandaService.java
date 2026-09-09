@@ -1,18 +1,22 @@
 package com.easy.eats.comanda.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.easy.eats.comanda.enums.StatusComanda;
 import com.easy.eats.comanda.model.Comanda;
 import com.easy.eats.comanda.model.ItensComandaRequest;
 import com.easy.eats.comanda.repository.ComandaRepository;
 import com.easy.eats.empresa.repository.EmpresaRepository;
 import com.easy.eats.itemVenda.model.ItemVenda;
 import com.easy.eats.itemVenda.service.ItemVendaService;
+import com.easy.eats.mesa.enums.StatusMesa;
 import com.easy.eats.mesa.model.Mesa;
 import com.easy.eats.mesa.repository.MesaRepository;
 import com.easy.eats.pagamento.model.Pagamento;
@@ -48,11 +52,19 @@ public class ComandaService {
     @Autowired
     PagamentoService pagamentoService;
 
+    /**
+     * Sem @Transactional de propósito: cada tentativa do laço abaixo precisa
+     * confirmar (ou falhar) sua própria gravação de forma independente para o
+     * retry-on-conflict funcionar. Envolver o método inteiro numa única
+     * transação marcaria a transação como rollback-only assim que a primeira
+     * tentativa colidisse na constraint única, e a tentativa seguinte
+     * quebraria com UnexpectedRollbackException em vez de tentar de novo.
+     */
     public Comanda abrir(Comanda dados) {
         Integer empresaId = SecurityUtils.getEmpresaId();
         Mesa mesa = mesaDaMesmaEmpresa(dados.getMesa(), empresaId);
 
-        if (!"LIVRE".equalsIgnoreCase(mesa.getStatus())) {
+        if (mesa.getStatus() != StatusMesa.LIVRE) {
             throw new IllegalArgumentException("A mesa não está livre");
         }
 
@@ -63,9 +75,9 @@ public class ComandaService {
             try {
                 Comanda comanda = new Comanda();
                 comanda.setNumero(proximoNumero(empresaId));
-                comanda.setStatus("ABERTA");
+                comanda.setStatus(StatusComanda.ABERTA);
                 comanda.setNomeCliente(dados.getNomeCliente());
-                comanda.setValorTotal(0.0);
+                comanda.setValorTotal(BigDecimal.ZERO);
                 comanda.setDtAbertura(LocalDateTime.now());
                 comanda.setMesa(mesa);
                 comanda.setUsuarioAbertura(
@@ -74,7 +86,7 @@ public class ComandaService {
 
                 Comanda salva = repository.save(comanda);
 
-                mesa.setStatus("OCUPADA");
+                mesa.setStatus(StatusMesa.OCUPADA);
                 mesaRepository.save(mesa);
 
                 return salva;
@@ -91,9 +103,14 @@ public class ComandaService {
             return repository.findAll();
         }
         Integer empresaId = SecurityUtils.getEmpresaId();
-        return status != null && !status.isBlank()
-                ? repository.findAllByEmpresaIdAndStatus(empresaId, status)
-                : repository.findAllByEmpresaId(empresaId);
+        if (status == null || status.isBlank()) {
+            return repository.findAllByEmpresaId(empresaId);
+        }
+        try {
+            return repository.findAllByEmpresaIdAndStatus(empresaId, StatusComanda.valueOf(status.toUpperCase()));
+        } catch (IllegalArgumentException semCorrespondencia) {
+            throw new IllegalArgumentException("Status inválido, use ABERTA ou FECHADA");
+        }
     }
 
     public Comanda buscarPorId(Integer id) {
@@ -107,9 +124,16 @@ public class ComandaService {
         return comanda;
     }
 
+    /**
+     * Cria a venda e persiste cada item numa única transação: sem isso, uma
+     * falha de validação no 3º item (por exemplo) deixaria os 2 primeiros já
+     * gravados e a venda "pela metade" — estado que o cliente nunca pediu e
+     * que só apareceria de novo ao reabrir a comanda.
+     */
+    @Transactional
     public Venda adicionarItens(Integer comandaId, ItensComandaRequest request) {
         Comanda comanda = buscarPorId(comandaId);
-        if (!"ABERTA".equalsIgnoreCase(comanda.getStatus())) {
+        if (comanda.getStatus() != StatusComanda.ABERTA) {
             throw new IllegalArgumentException("A comanda não está aberta");
         }
 
@@ -135,23 +159,30 @@ public class ComandaService {
         return vendaService.buscarPorId(vendaCriada.getId()).orElse(vendaCriada);
     }
 
+    /**
+     * Fechar a comanda grava a comanda, o pagamento e libera a mesa em três
+     * chamadas separadas. Sem transação, uma falha entre elas (ex.: erro ao
+     * criar o pagamento) deixaria a comanda marcada FECHADA sem pagamento
+     * registrado e a mesa ainda OCUPADA — travada até intervenção manual.
+     */
+    @Transactional
     public Comanda fechar(Integer id, String metodoPagamento) {
         Comanda comanda = buscarPorId(id);
 
-        if ("FECHADA".equalsIgnoreCase(comanda.getStatus())) {
+        if (comanda.getStatus() == StatusComanda.FECHADA) {
             throw new IllegalArgumentException("Comanda já está fechada");
         }
         if (metodoPagamento == null || metodoPagamento.isBlank()) {
             throw new IllegalArgumentException("Informe a forma de pagamento");
         }
 
-        double total = somaItens(comanda);
-        if (total <= 0) {
+        BigDecimal total = somaItens(comanda);
+        if (total.signum() <= 0) {
             throw new IllegalArgumentException("A comanda não possui itens para fechar");
         }
 
         comanda.setValorTotal(total);
-        comanda.setStatus("FECHADA");
+        comanda.setStatus(StatusComanda.FECHADA);
         comanda.setDtFechamento(LocalDateTime.now());
         Comanda salva = repository.save(comanda);
 
@@ -164,7 +195,7 @@ public class ComandaService {
         pagamentoService.criar(pagamento);
 
         Mesa mesa = salva.getMesa();
-        mesa.setStatus("LIVRE");
+        mesa.setStatus(StatusMesa.LIVRE);
         mesaRepository.save(mesa);
 
         return salva;
@@ -179,13 +210,13 @@ public class ComandaService {
         if (item.getQuantidade() == null || item.getQuantidade() <= 0) {
             throw new IllegalArgumentException("A quantidade do item deve ser maior que zero");
         }
-        if (item.getPreco_unitario() == null || item.getPreco_unitario() <= 0) {
+        if (item.getPreco_unitario() == null || item.getPreco_unitario().signum() <= 0) {
             throw new IllegalArgumentException("O preço unitário do item deve ser maior que zero");
         }
     }
 
-    private double somaItens(Comanda comanda) {
-        double total = 0.0;
+    private BigDecimal somaItens(Comanda comanda) {
+        BigDecimal total = BigDecimal.ZERO;
         if (comanda.getVendas() == null) {
             return total;
         }
@@ -194,7 +225,9 @@ public class ComandaService {
                 continue;
             }
             for (ItemVenda item : venda.getItens()) {
-                total += item.getValor_total() != null ? item.getValor_total() : 0.0;
+                if (item.getValor_total() != null) {
+                    total = total.add(item.getValor_total());
+                }
             }
         }
         return total;

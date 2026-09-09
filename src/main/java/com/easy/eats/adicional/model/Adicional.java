@@ -1,5 +1,7 @@
 package com.easy.eats.adicional.model;
 
+import java.math.BigDecimal;
+
 import com.easy.eats.produto.model.Produto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -37,7 +39,7 @@ public class Adicional {
 
     @NotNull(message = "O preço é obrigatório")
     @PositiveOrZero(message = "O preço não pode ser negativo")
-    private Double preco;
+    private BigDecimal preco;
 
     @ManyToOne
     @JoinColumn(name = "produto_id", nullable = false)
