@@ -14,8 +14,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.stripe.exception.StripeException;
-
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 
@@ -104,12 +102,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> tratarIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.badRequest().body(corpoErro(HttpStatus.BAD_REQUEST, ex.getMessage()));
-    }
-
-    @ExceptionHandler(StripeException.class)
-    public ResponseEntity<Map<String, Object>> tratarStripeException(StripeException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                .body(corpoErro(HttpStatus.BAD_GATEWAY, "Falha na comunicação com o Stripe: " + ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

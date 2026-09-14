@@ -95,10 +95,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        // Rotas públicas do link do cardápio (pedido/checkout do cliente final) e
-                        // do callback de retorno do onboarding Stripe Connect — sem JWT. O
-                        // JwtAuthenticationFilter não quebra requests sem header Authorization,
-                        // então não precisa de ajuste no filtro para liberar isso.
+                        // Rotas públicas do link do cardápio (pedido/checkout do cliente final) —
+                        // sem JWT. O JwtAuthenticationFilter não quebra requests sem header
+                        // Authorization, então não precisa de ajuste no filtro para liberar isso.
                         .requestMatchers("/public/**").permitAll()
                         // Precisam vir antes do matcher genérico de /empresa/** (SUPERADMIN):
                         // o administrador da própria empresa pode editar o slug do link público
