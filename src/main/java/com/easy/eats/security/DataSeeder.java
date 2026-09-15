@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -32,6 +33,7 @@ import com.easy.eats.usuario.repository.UsuarioRepository;
  * não existam. Em produção isso seria substituído por uma migration.
  */
 @Component
+@Order(1)
 public class DataSeeder implements CommandLineRunner {
 
     private final UsuarioRepository usuarioRepository;
