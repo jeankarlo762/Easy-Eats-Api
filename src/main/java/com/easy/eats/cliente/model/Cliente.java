@@ -61,5 +61,5 @@ public class Cliente {
 
     @OneToMany(mappedBy = "cliente")
     @JsonIgnoreProperties("cliente")
-    private java.util.List<Endereco> enderecos;
+    private java.util.List<Endereco> enderecos = new java.util.ArrayList<>();
 }
