@@ -8,6 +8,7 @@ import java.util.List;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.easy.eats.caixa.enums.StatusCaixa;
 import com.easy.eats.caixa.model.Caixa;
@@ -144,6 +145,7 @@ public class DemoDataExpandidoSeeder implements CommandLineRunner {
     }
 
     @Override
+    @Transactional
     public void run(String... args) {
         Empresa empresa = empresaRepository.findAll().stream()
                 .filter(e -> "Empresa Demo".equals(e.getNome()))
