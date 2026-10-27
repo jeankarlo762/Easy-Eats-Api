@@ -6,6 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 public record FichaTecnicaItemPayload(
-        @NotNull(message = "O insumo é obrigatório") Integer insumoId,
-        @NotNull(message = "A quantidade é obrigatória") @Positive(message = "A quantidade deve ser maior que zero") BigDecimal quantidade) {
+        @NotNull(message = "O ingrediente é obrigatório") Integer ingredienteId,
+        @NotNull(message = "A quantidade utilizada é obrigatória") @Positive(message = "A quantidade utilizada deve ser maior que zero") BigDecimal quantidadeUtilizada) {
 }

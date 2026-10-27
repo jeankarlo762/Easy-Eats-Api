@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Getter;
@@ -19,16 +20,17 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Um insumo (Produto natureza INSUMO) e a quantidade dele consumida para
- * produzir uma unidade de um produto PREPARADO — a "ficha técnica"/receita.
- * Base para custo real de produção; ainda não debita o Estoque do insumo na
- * venda (isso ficaria pra quando o módulo de Estoque cobrir baixa automática).
+ * Vínculo produto × ingrediente (Produto natureza INSUMO) × quantidade
+ * utilizada para produzir uma unidade do produto — a "ficha técnica"/receita.
+ * Um ingrediente aparece no máximo uma vez por produto. Base para custo real
+ * de produção, planejamento e, futuramente, baixa automática do Estoque do
+ * ingrediente na venda (ainda não implementada).
  */
 @Getter
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "TBFICHATECNICAITEM")
+@Table(name = "TBFICHATECNICAITEM", uniqueConstraints = @UniqueConstraint(columnNames = { "produto_id", "ingrediente_id" }))
 public class FichaTecnicaItem {
 
     @Id
@@ -41,11 +43,11 @@ public class FichaTecnicaItem {
     private Produto produto;
 
     @ManyToOne
-    @JoinColumn(name = "insumo_id", nullable = false)
+    @JoinColumn(name = "ingrediente_id", nullable = false)
     @JsonIgnoreProperties({ "categoria", "empresa" })
-    private Produto insumo;
+    private Produto ingrediente;
 
-    @NotNull(message = "A quantidade é obrigatória")
-    @Positive(message = "A quantidade deve ser maior que zero")
-    private BigDecimal quantidade;
+    @NotNull(message = "A quantidade utilizada é obrigatória")
+    @Positive(message = "A quantidade utilizada deve ser maior que zero")
+    private BigDecimal quantidadeUtilizada;
 }
