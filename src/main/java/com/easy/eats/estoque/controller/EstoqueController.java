@@ -14,11 +14,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.easy.eats.estoque.dto.IngredientePayload;
 import com.easy.eats.estoque.enums.TipoMovimentacaoEstoque;
 import com.easy.eats.estoque.model.Estoque;
 import com.easy.eats.estoque.model.ItemMaisConsumido;
 import com.easy.eats.estoque.model.MovimentacaoEstoque;
 import com.easy.eats.estoque.service.EstoqueService;
+
+import jakarta.validation.Valid;
 
 /**
  * Nível de estoque por produto (tipicamente produtos de natureza INSUMO).
@@ -40,6 +43,28 @@ public class EstoqueController {
     @GetMapping("/abaixo-do-minimo")
     public List<Estoque> listarAbaixoDoMinimo() {
         return service.listarAbaixoDoMinimo();
+    }
+
+    @GetMapping("/ingredientes")
+    public List<Estoque> listarIngredientes() {
+        return service.listarIngredientes();
+    }
+
+    @PostMapping("/ingredientes")
+    public ResponseEntity<Estoque> criarIngrediente(@Valid @RequestBody IngredientePayload payload) {
+        return ResponseEntity.ok(service.criarIngrediente(payload));
+    }
+
+    @PutMapping("/ingredientes/{produtoId}")
+    public ResponseEntity<Estoque> atualizarIngrediente(@PathVariable Integer produtoId,
+            @Valid @RequestBody IngredientePayload payload) {
+        return ResponseEntity.ok(service.atualizarIngrediente(produtoId, payload));
+    }
+
+    @DeleteMapping("/ingredientes/{produtoId}")
+    public ResponseEntity<Void> removerIngrediente(@PathVariable Integer produtoId) {
+        service.removerIngrediente(produtoId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{produtoId}")

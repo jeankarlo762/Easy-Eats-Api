@@ -1,5 +1,6 @@
 package com.easy.eats.estoque.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.easy.eats.empresa.repository.EmpresaRepository;
+import com.easy.eats.estoque.dto.IngredientePayload;
 import com.easy.eats.estoque.enums.TipoMovimentacaoEstoque;
 import com.easy.eats.estoque.model.Estoque;
 import com.easy.eats.estoque.model.ItemMaisConsumido;
@@ -16,8 +18,10 @@ import com.easy.eats.estoque.model.MovimentacaoEstoque;
 import com.easy.eats.estoque.repository.EstoqueRepository;
 import com.easy.eats.estoque.repository.MovimentacaoEstoqueRepository;
 import com.easy.eats.notificacao.service.NotificacaoService;
+import com.easy.eats.produto.enums.NaturezaProduto;
 import com.easy.eats.produto.model.Produto;
 import com.easy.eats.produto.repository.ProdutoRepository;
+import com.easy.eats.produto.service.ProdutoService;
 import com.easy.eats.security.SecurityUtils;
 
 @Service
@@ -37,6 +41,9 @@ public class EstoqueService {
 
     @Autowired
     private NotificacaoService notificacaoService;
+
+    @Autowired
+    private ProdutoService produtoService;
 
     public List<Estoque> listarTodos() {
         if (SecurityUtils.isSuperadmin()) {
@@ -87,9 +94,108 @@ public class EstoqueService {
         return repository.save(existente);
     }
 
+    /** Sem estoque o ingrediente deixa de poder entrar em ficha técnica — bloqueia se já estiver em uma. */
     public void remover(Integer produtoId) {
         Estoque existente = buscarPorProduto(produtoId);
+        produtoService.garantirIngredienteSemUsoEmFicha(existente.getProduto());
         repository.delete(existente);
+    }
+
+    public List<Estoque> listarIngredientes() {
+        if (SecurityUtils.isSuperadmin()) {
+            return repository.findAllByProduto_NaturezaOrderByProduto_NomeAsc(NaturezaProduto.INSUMO);
+        }
+        return repository.findAllByProduto_EmpresaIdAndProduto_NaturezaOrderByProduto_NomeAsc(
+                SecurityUtils.getEmpresaId(), NaturezaProduto.INSUMO);
+    }
+
+    /** Cria o Produto INSUMO e o registro de estoque dele na mesma transação. */
+    @Transactional
+    public Estoque criarIngrediente(IngredientePayload payload) {
+        Integer empresaId = SecurityUtils.getEmpresaId();
+        String nome = payload.nome().trim();
+        garantirNomeDeIngredienteLivre(nome, empresaId, null);
+
+        Produto ingrediente = new Produto();
+        ingrediente.setNome(nome);
+        ingrediente.setNatureza(NaturezaProduto.INSUMO);
+        ingrediente.setUnidadeMedida(payload.unidadeMedida());
+        aplicarCusto(ingrediente, payload.custo());
+        ingrediente.setFlAtivo(true);
+        ingrediente.setDtAlteracao(LocalDateTime.now());
+        ingrediente.setEmpresa(empresaRepository.getReferenceById(empresaId));
+        ingrediente = produtoRepository.save(ingrediente);
+
+        Estoque estoque = new Estoque();
+        estoque.setProduto(ingrediente);
+        estoque.setQuantidadeAtual(payload.quantidadeAtual() != null ? payload.quantidadeAtual() : 0);
+        estoque.setEstoqueMinimo(payload.estoqueMinimo());
+        estoque.setDtUltimaMovimentacao(LocalDateTime.now());
+
+        return repository.save(estoque);
+    }
+
+    /** Atualiza dados cadastrais; o saldo (quantidadeAtual) só muda via movimentação. */
+    @Transactional
+    public Estoque atualizarIngrediente(Integer produtoId, IngredientePayload payload) {
+        Estoque estoque = ingredienteComEstoque(produtoId);
+        Produto ingrediente = estoque.getProduto();
+        String nome = payload.nome().trim();
+        garantirNomeDeIngredienteLivre(nome, ingrediente.getEmpresa() != null ? ingrediente.getEmpresa().getId() : null,
+                ingrediente.getId());
+
+        ingrediente.setNome(nome);
+        ingrediente.setUnidadeMedida(payload.unidadeMedida());
+        aplicarCusto(ingrediente, payload.custo());
+        ingrediente.setDtAlteracao(LocalDateTime.now());
+        produtoRepository.save(ingrediente);
+
+        estoque.setEstoqueMinimo(payload.estoqueMinimo());
+        return repository.save(estoque);
+    }
+
+    /**
+     * Remove o ingrediente do estoque e desativa o Produto (não apaga: o
+     * histórico de movimentações referencia produto_id). Bloqueado enquanto
+     * algum produto usar o ingrediente na ficha técnica.
+     */
+    @Transactional
+    public void removerIngrediente(Integer produtoId) {
+        Estoque estoque = ingredienteComEstoque(produtoId);
+        Produto ingrediente = estoque.getProduto();
+        produtoService.garantirIngredienteSemUsoEmFicha(ingrediente);
+
+        repository.delete(estoque);
+        ingrediente.setFlAtivo(false);
+        ingrediente.setDtAlteracao(LocalDateTime.now());
+        produtoRepository.save(ingrediente);
+    }
+
+    private Estoque ingredienteComEstoque(Integer produtoId) {
+        Estoque estoque = buscarPorProduto(produtoId);
+        if (estoque.getProduto().getNatureza() != NaturezaProduto.INSUMO) {
+            throw new IllegalArgumentException("O produto informado não é um ingrediente (natureza INSUMO)");
+        }
+        return estoque;
+    }
+
+    /** Para INSUMO o preço de compra é o próprio custo — preco é obrigatório na tabela. */
+    private void aplicarCusto(Produto ingrediente, BigDecimal custo) {
+        ingrediente.setCusto(custo);
+        ingrediente.setPreco(custo != null ? custo : BigDecimal.ZERO);
+    }
+
+    private void garantirNomeDeIngredienteLivre(String nome, Integer empresaId, Integer ignorarProdutoId) {
+        if (empresaId == null) {
+            return;
+        }
+        boolean duplicado = repository.findAllByProduto_EmpresaIdAndProduto_NaturezaOrderByProduto_NomeAsc(
+                empresaId, NaturezaProduto.INSUMO).stream()
+                .map(Estoque::getProduto)
+                .anyMatch(p -> !p.getId().equals(ignorarProdutoId) && p.getNome().equalsIgnoreCase(nome));
+        if (duplicado) {
+            throw new IllegalArgumentException("Já existe um ingrediente com o nome \"" + nome + "\"");
+        }
     }
 
     /**

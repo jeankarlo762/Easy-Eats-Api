@@ -44,7 +44,15 @@ public class FichaTecnicaItemController {
     public ResponseEntity<FichaTecnicaItem> salvar(
             @PathVariable Integer produtoId,
             @Valid @RequestBody FichaTecnicaItemPayload payload) {
-        return ResponseEntity.ok(service.salvar(produtoId, payload.insumoId(), payload.quantidade()));
+        return ResponseEntity.ok(service.salvar(produtoId, payload.ingredienteId(), payload.quantidadeUtilizada()));
+    }
+
+    /** Substitui a composição inteira do produto (validação item a item no service). */
+    @PutMapping
+    public List<FichaTecnicaItem> substituir(
+            @PathVariable Integer produtoId,
+            @RequestBody List<FichaTecnicaItemPayload> itens) {
+        return service.substituir(produtoId, itens);
     }
 
     @PutMapping("/{id}")
@@ -52,7 +60,7 @@ public class FichaTecnicaItemController {
             @PathVariable Integer produtoId,
             @PathVariable Integer id,
             @Valid @RequestBody FichaTecnicaItemPayload payload) {
-        return ResponseEntity.ok(service.atualizar(produtoId, id, payload.quantidade()));
+        return ResponseEntity.ok(service.atualizar(produtoId, id, payload.quantidadeUtilizada()));
     }
 
     @DeleteMapping("/{id}")

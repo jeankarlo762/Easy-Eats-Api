@@ -57,6 +57,7 @@ import com.easy.eats.pedidocompra.enums.StatusPedidoCompra;
 import com.easy.eats.pedidocompra.model.PedidoCompra;
 import com.easy.eats.pedidocompra.repository.PedidoCompraRepository;
 import com.easy.eats.produto.enums.NaturezaProduto;
+import com.easy.eats.produto.enums.UnidadeMedida;
 import com.easy.eats.produto.model.Produto;
 import com.easy.eats.produto.repository.ProdutoRepository;
 import com.easy.eats.usuario.model.Usuario;
@@ -334,6 +335,9 @@ public class DemoDataExpandidoSeeder implements CommandLineRunner {
                     produto.setPreco(preco);
                     produto.setFlAtivo(true);
                     produto.setNatureza(natureza);
+                    if (natureza == NaturezaProduto.INSUMO) {
+                        produto.setUnidadeMedida(UnidadeMedida.UN);
+                    }
                     produto.setCategoria(categoria);
                     produto.setEmpresa(empresa);
                     return produtoRepository.save(produto);
@@ -349,14 +353,14 @@ public class DemoDataExpandidoSeeder implements CommandLineRunner {
 
     private void fichaTecnicaItemSeNaoExistir(Produto produtoFinal, Produto insumo, BigDecimal quantidade) {
         boolean jaExiste = fichaTecnicaItemRepository.findAllByProdutoId(produtoFinal.getId()).stream()
-                .anyMatch(item -> item.getInsumo() != null && item.getInsumo().getId().equals(insumo.getId()));
+                .anyMatch(item -> item.getIngrediente() != null && item.getIngrediente().getId().equals(insumo.getId()));
         if (jaExiste) {
             return;
         }
         FichaTecnicaItem item = new FichaTecnicaItem();
         item.setProduto(produtoFinal);
-        item.setInsumo(insumo);
-        item.setQuantidade(quantidade);
+        item.setIngrediente(insumo);
+        item.setQuantidadeUtilizada(quantidade);
         fichaTecnicaItemRepository.save(item);
     }
 

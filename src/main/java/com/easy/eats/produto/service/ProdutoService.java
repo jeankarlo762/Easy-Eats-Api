@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import com.easy.eats.categoria.model.Categoria;
 import com.easy.eats.categoria.repository.CategoriaRepository;
 import com.easy.eats.empresa.repository.EmpresaRepository;
+import com.easy.eats.fichatecnica.repository.FichaTecnicaItemRepository;
+import com.easy.eats.produto.enums.NaturezaProduto;
 import com.easy.eats.produto.model.Produto;
 import com.easy.eats.produto.repository.ProdutoRepository;
 import com.easy.eats.security.SecurityUtils;
@@ -22,6 +24,9 @@ public class ProdutoService {
 
     @Autowired
     private CategoriaRepository categoriaRepository;
+
+    @Autowired
+    private FichaTecnicaItemRepository fichaTecnicaItemRepository;
 
     public ProdutoService(ProdutoRepository repository){
         this.repository = repository;
@@ -57,12 +62,20 @@ public class ProdutoService {
 
         Produto existente = buscarPorId(id);
 
+        if (existente.getNatureza() == NaturezaProduto.INSUMO && produto.getNatureza() != NaturezaProduto.INSUMO) {
+            garantirIngredienteSemUsoEmFicha(existente);
+        }
+
         existente.setNome(produto.getNome());
         existente.setDescricao(produto.getDescricao());
         existente.setPreco(produto.getPreco());
         existente.setCusto(produto.getCusto());
         existente.setFlAtivo(produto.getFlAtivo());
         existente.setNatureza(produto.getNatureza());
+        // Telas que não lidam com unidade (ex.: catálogo) não a enviam — não apaga a já gravada.
+        if (produto.getUnidadeMedida() != null) {
+            existente.setUnidadeMedida(produto.getUnidadeMedida());
+        }
         existente.setCategoria(categoriaDaMesmaEmpresa(produto.getCategoria()));
         existente.setDtAlteracao(LocalDateTime.now());
 
@@ -76,12 +89,26 @@ public class ProdutoService {
      * DELETE físico falharia por violação de constraint (ou, pior, apagaria
      * dados que relatórios futuros precisam). flAtivo já existe exatamente
      * para este caso; as listagens (ex.: novo-pedido) já filtram por ele.
+     * Um ingrediente ainda usado em alguma ficha técnica não pode sair.
      */
     public void deletar(Integer id) {
         Produto produto = buscarPorId(id);
+        garantirIngredienteSemUsoEmFicha(produto);
         produto.setFlAtivo(false);
         produto.setDtAlteracao(LocalDateTime.now());
         repository.save(produto);
+    }
+
+    public void garantirIngredienteSemUsoEmFicha(Produto ingrediente) {
+        List<String> produtosQueUsam = fichaTecnicaItemRepository.findAllByIngredienteId(ingrediente.getId()).stream()
+                .map(item -> item.getProduto().getNome())
+                .distinct()
+                .toList();
+
+        if (!produtosQueUsam.isEmpty()) {
+            throw new IllegalArgumentException("\"" + ingrediente.getNome() + "\" é usado na ficha técnica de: "
+                    + String.join(", ", produtosQueUsam) + ". Remova-o dessas fichas antes.");
+        }
     }
 
     private Categoria categoriaDaMesmaEmpresa(Categoria categoriaRecebida) {
