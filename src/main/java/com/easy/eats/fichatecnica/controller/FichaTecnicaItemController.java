@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.easy.eats.fichatecnica.dto.FichaTecnicaItemPayload;
-import com.easy.eats.fichatecnica.model.FichaTecnicaItem;
+import com.easy.eats.fichatecnica.dto.FichaTecnicaItemResponse;
 import com.easy.eats.fichatecnica.service.FichaTecnicaItemService;
 
 import jakarta.validation.Valid;
@@ -31,8 +31,8 @@ public class FichaTecnicaItemController {
     }
 
     @GetMapping
-    public List<FichaTecnicaItem> listar(@PathVariable Integer produtoId) {
-        return service.listarPorProduto(produtoId);
+    public List<FichaTecnicaItemResponse> listar(@PathVariable Integer produtoId) {
+        return service.listarPorProduto(produtoId).stream().map(FichaTecnicaItemResponse::de).toList();
     }
 
     @GetMapping("/custo-total")
@@ -40,19 +40,29 @@ public class FichaTecnicaItemController {
         return Map.of("custoTotal", service.custoTotal(produtoId));
     }
 
+    /** Substitui a composição inteira do produto (salvar a ficha técnica junto com o cadastro do produto). */
+    @PutMapping
+    public List<FichaTecnicaItemResponse> substituir(
+            @PathVariable Integer produtoId,
+            @RequestBody List<FichaTecnicaItemPayload> itens) {
+        return service.substituir(produtoId, itens).stream().map(FichaTecnicaItemResponse::de).toList();
+    }
+
     @PostMapping
-    public ResponseEntity<FichaTecnicaItem> salvar(
+    public ResponseEntity<FichaTecnicaItemResponse> salvar(
             @PathVariable Integer produtoId,
             @Valid @RequestBody FichaTecnicaItemPayload payload) {
-        return ResponseEntity.ok(service.salvar(produtoId, payload.insumoId(), payload.quantidade()));
+        return ResponseEntity.ok(FichaTecnicaItemResponse.de(
+                service.salvar(produtoId, payload.ingredienteId(), payload.quantidadeUtilizada())));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<FichaTecnicaItem> atualizar(
+    public ResponseEntity<FichaTecnicaItemResponse> atualizar(
             @PathVariable Integer produtoId,
             @PathVariable Integer id,
             @Valid @RequestBody FichaTecnicaItemPayload payload) {
-        return ResponseEntity.ok(service.atualizar(produtoId, id, payload.quantidade()));
+        return ResponseEntity.ok(FichaTecnicaItemResponse.de(
+                service.atualizar(produtoId, id, payload.quantidadeUtilizada())));
     }
 
     @DeleteMapping("/{id}")
