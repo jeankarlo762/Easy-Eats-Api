@@ -1,0 +1,61 @@
+# Easy Eats: banco, backend e frontend em containers separados.
+#   cd docker && cp .env.example .env   (preencha JWT_SECRET e a senha)
+#   docker compose up -d --build
+# Frontend: http://localhost:4200 | API: http://localhost:8080
+
+name: easy-eats
+
+services:
+  banco:
+    build:
+      context: ./banco
+    image: ${DOCKERHUB_USERNAME:-easyeats}/easy-eats:banco-${TAG:-latest}
+    environment:
+      POSTGRES_DB: ${DB_NAME:-easyeats}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no docker/.env}
+    volumes:
+      - banco-dados:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/backend/Dockerfile
+    image: ${DOCKERHUB_USERNAME:-easyeats}/easy-eats:backend-${TAG:-latest}
+    environment:
+      DB_URL: jdbc:postgresql://banco:5432/${DB_NAME:-easyeats}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET no docker/.env}
+      APP_PUBLIC_BASE_URL: http://localhost:${FRONTEND_PORT:-4200}
+      APP_CORS_ALLOWED_ORIGIN: http://localhost:${FRONTEND_PORT:-4200}
+      SPRING_JPA_SHOW_SQL: "false"
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      banco:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      additional_contexts:
+        app: ${FRONTEND_PATH:-../../Easy-Eats}
+    image: ${DOCKERHUB_USERNAME:-easyeats}/easy-eats:frontend-${TAG:-latest}
+    ports:
+      - "${FRONTEND_PORT:-4200}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  banco-dados:
