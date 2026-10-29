@@ -4,10 +4,10 @@ Banco, backend e frontend rodam em containers separados, cada um com sua pasta:
 
 ```
 docker/
-├── banco/       PostgreSQL 16 (+ init/: scripts que rodam na criação do volume)
+├── banco/       PostgreSQL 16 (+ init/ e README com os scripts de criação do banco)
 ├── backend/     API Spring Boot (build Maven → JRE 21)
 ├── frontend/    Angular buildado e servido pelo nginx (proxy /api → backend)
-├── docker-compose.yml
+├── docker-compose.yaml
 ├── .env.example
 └── publicar.sh  build + push para o Docker Hub
 ```
@@ -34,8 +34,13 @@ docker compose up -d --build
 | API      | http://localhost:8080  |
 | Banco    | localhost:5432         |
 
-O schema é criado pelo Flyway na primeira subida da API; os seeders criam a
-empresa demo (`admin@easyeats.com` / `admin123`).
+Os três serviços ficam na rede `easy-eats-net` e se encontram pelo nome do
+serviço: a API acessa o banco em `banco:5432` e o nginx do frontend faz proxy de
+`/api` para `backend:8080`.
+
+O schema é criado pelo Flyway na primeira subida da API (scripts listados em
+[`banco/README.md`](banco/README.md)); os seeders criam a empresa demo
+(`admin@easyeats.com` / `admin123`).
 
 Comandos úteis:
 

@@ -18,6 +18,8 @@ services:
       - banco-dados:/var/lib/postgresql/data
     ports:
       - "${DB_PORT:-5432}:5432"
+    networks:
+      - easy-eats-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -40,6 +42,8 @@ services:
       SPRING_JPA_SHOW_SQL: "false"
     ports:
       - "${BACKEND_PORT:-8080}:8080"
+    networks:
+      - easy-eats-net
     depends_on:
       banco:
         condition: service_healthy
@@ -53,9 +57,18 @@ services:
     image: ${DOCKERHUB_USERNAME:-easyeats}/easy-eats:frontend-${TAG:-latest}
     ports:
       - "${FRONTEND_PORT:-4200}:80"
+    networks:
+      - easy-eats-net
     depends_on:
       - backend
     restart: unless-stopped
+
+# Rede própria do projeto: os serviços se encontram pelo nome
+# (o backend acessa "banco:5432" e o nginx do frontend faz proxy para "backend:8080").
+networks:
+  easy-eats-net:
+    name: easy-eats-net
+    driver: bridge
 
 volumes:
   banco-dados:

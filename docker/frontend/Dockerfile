@@ -1,5 +1,5 @@
 # Frontend Angular servido pelo nginx. O código vem do repositório
-# Easy-Eats, passado como contexto adicional "app" (ver docker-compose.yml);
+# Easy-Eats, passado como contexto adicional "app" (ver docker-compose.yaml);
 # o contexto principal é esta pasta, só para o nginx.conf.
 FROM node:22-alpine AS build
 WORKDIR /app
