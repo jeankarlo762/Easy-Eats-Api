@@ -87,6 +87,15 @@ public class EmpresaService {
         return repository.save(empresa);
     }
 
+    /** Empresas antigas podem estar sem slug; gera um na primeira vez que o link é pedido. */
+    public String garantirSlug(Empresa empresa) {
+        if (empresa.getSlug() == null || empresa.getSlug().isBlank()) {
+            empresa.setSlug(gerarSlugUnico(empresa.getNome(), empresa.getId()));
+            repository.save(empresa);
+        }
+        return empresa.getSlug();
+    }
+
     private String gerarSlugUnico(String nome, Integer idAtual) {
         String base = normalizarSlug(nome);
         String candidato = base;
