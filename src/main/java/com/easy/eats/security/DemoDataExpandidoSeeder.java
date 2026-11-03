@@ -349,14 +349,14 @@ public class DemoDataExpandidoSeeder implements CommandLineRunner {
 
     private void fichaTecnicaItemSeNaoExistir(Produto produtoFinal, Produto insumo, BigDecimal quantidade) {
         boolean jaExiste = fichaTecnicaItemRepository.findAllByProdutoId(produtoFinal.getId()).stream()
-                .anyMatch(item -> item.getInsumo() != null && item.getInsumo().getId().equals(insumo.getId()));
+                .anyMatch(item -> item.getIngrediente() != null && item.getIngrediente().getId().equals(insumo.getId()));
         if (jaExiste) {
             return;
         }
         FichaTecnicaItem item = new FichaTecnicaItem();
         item.setProduto(produtoFinal);
-        item.setInsumo(insumo);
-        item.setQuantidade(quantidade);
+        item.setIngrediente(insumo);
+        item.setQuantidadeUtilizada(quantidade);
         fichaTecnicaItemRepository.save(item);
     }
 

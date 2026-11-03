@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.easy.eats.categoria.model.Categoria;
 import com.easy.eats.categoria.repository.CategoriaRepository;
 import com.easy.eats.empresa.repository.EmpresaRepository;
+import com.easy.eats.fichatecnica.repository.FichaTecnicaItemRepository;
 import com.easy.eats.produto.model.Produto;
 import com.easy.eats.produto.repository.ProdutoRepository;
 import com.easy.eats.security.SecurityUtils;
@@ -22,6 +23,9 @@ public class ProdutoService {
 
     @Autowired
     private CategoriaRepository categoriaRepository;
+
+    @Autowired
+    private FichaTecnicaItemRepository fichaTecnicaItemRepository;
 
     public ProdutoService(ProdutoRepository repository){
         this.repository = repository;
@@ -63,6 +67,9 @@ public class ProdutoService {
         existente.setCusto(produto.getCusto());
         existente.setFlAtivo(produto.getFlAtivo());
         existente.setNatureza(produto.getNatureza());
+        if (produto.getUnidadeMedida() != null) {
+            existente.setUnidadeMedida(produto.getUnidadeMedida());
+        }
         existente.setCategoria(categoriaDaMesmaEmpresa(produto.getCategoria()));
         existente.setDtAlteracao(LocalDateTime.now());
 
@@ -76,9 +83,15 @@ public class ProdutoService {
      * DELETE físico falharia por violação de constraint (ou, pior, apagaria
      * dados que relatórios futuros precisam). flAtivo já existe exatamente
      * para este caso; as listagens (ex.: novo-pedido) já filtram por ele.
+     * Um ingrediente que ainda compõe a ficha técnica de um produto ativo não
+     * pode ser excluído — a receita ficaria apontando para um item inexistente.
      */
     public void deletar(Integer id) {
         Produto produto = buscarPorId(id);
+        if (fichaTecnicaItemRepository.ingredienteUsadoEmProdutoAtivo(id)) {
+            throw new IllegalArgumentException(
+                    "Este ingrediente está na ficha técnica de um ou mais produtos; remova-o das fichas antes de excluir");
+        }
         produto.setFlAtivo(false);
         produto.setDtAlteracao(LocalDateTime.now());
         repository.save(produto);

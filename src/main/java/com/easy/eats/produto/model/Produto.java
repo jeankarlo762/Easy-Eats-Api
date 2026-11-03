@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import com.easy.eats.categoria.model.Categoria;
 import com.easy.eats.empresa.model.model.Empresa;
 import com.easy.eats.produto.enums.NaturezaProduto;
+import com.easy.eats.produto.enums.UnidadeMedida;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Entity;
@@ -58,6 +59,10 @@ public class Produto {
      */
     @Enumerated(EnumType.STRING)
     private NaturezaProduto natureza;
+
+    /** Usada pelos ingredientes (natureza INSUMO) no estoque e na ficha técnica. */
+    @Enumerated(EnumType.STRING)
+    private UnidadeMedida unidadeMedida;
 
     @ManyToOne
     @JoinColumn(name = "categoria_id")
