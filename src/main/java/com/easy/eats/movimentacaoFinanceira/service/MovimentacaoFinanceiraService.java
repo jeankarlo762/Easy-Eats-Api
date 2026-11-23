@@ -37,6 +37,12 @@ public class MovimentacaoFinanceiraService {
         return repository.findAllByEmpresaId(SecurityUtils.getEmpresaId());
     }
 
+    /** Lançamentos da empresa dentro do período [inicio, fim], mais recentes primeiro. */
+    public List<MovimentacaoFinanceira> listarPorPeriodo(java.time.LocalDateTime inicio, java.time.LocalDateTime fim) {
+        return repository.findAllByEmpresaIdAndDataMovimentacaoBetweenOrderByDataMovimentacaoDesc(
+                SecurityUtils.getEmpresaId(), inicio, fim);
+    }
+
     public Optional<MovimentacaoFinanceira> buscarPorId(Integer id) {
         if (SecurityUtils.isSuperadmin()) {
             return repository.findById(id);

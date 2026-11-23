@@ -156,6 +156,8 @@ public class ComandaService {
             itemVendaService.criar(item);
         }
 
+        vendaService.recalcularTotal(vendaCriada.getId());
+
         return vendaService.buscarPorId(vendaCriada.getId()).orElse(vendaCriada);
     }
 

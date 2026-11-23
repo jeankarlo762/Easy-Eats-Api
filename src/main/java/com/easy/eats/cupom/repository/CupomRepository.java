@@ -14,4 +14,6 @@ public interface CupomRepository extends JpaRepository<Cupom, Integer> {
     List<Cupom> findAllByEmpresaId(Integer empresaId);
 
     Optional<Cupom> findByIdAndEmpresaId(Integer id, Integer empresaId);
+
+    Optional<Cupom> findByCodigoIgnoreCaseAndEmpresaId(String codigo, Integer empresaId);
 }

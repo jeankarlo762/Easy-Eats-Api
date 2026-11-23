@@ -1,9 +1,14 @@
 package com.easy.eats.caixa.controller;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.easy.eats.caixa.model.Caixa;
@@ -28,6 +34,16 @@ public class CaixaController {
     public ResponseEntity<Caixa> status() {
         Caixa caixa = service.status();
         return caixa != null ? ResponseEntity.ok(caixa) : ResponseEntity.noContent().build();
+    }
+
+    /** Sessões já fechadas dentro do período informado (padrão: últimos 30 dias). */
+    @GetMapping("/historico")
+    public List<Caixa> historico(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim) {
+        LocalDate fimEfetivo = fim != null ? fim : LocalDate.now();
+        LocalDate inicioEfetivo = inicio != null ? inicio : fimEfetivo.minusDays(30);
+        return service.historico(inicioEfetivo.atStartOfDay(), LocalDateTime.of(fimEfetivo, LocalTime.MAX));
     }
 
     @PostMapping("/abrir")

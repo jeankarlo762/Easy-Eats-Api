@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.easy.eats.cliente.model.Cliente;
 import com.easy.eats.comanda.model.Comanda;
+import com.easy.eats.cupom.model.Cupom;
 import com.easy.eats.empresa.model.model.Empresa;
 import com.easy.eats.itemVenda.model.ItemVenda;
 import com.easy.eats.mesa.model.Mesa;
@@ -99,6 +100,12 @@ public class Venda {
     @ManyToOne
     @JoinColumn(name = "comanda_id")
     private Comanda comanda;
+
+    /** Cupom aplicado a esta venda, se houver (POST /venda/{id}/cupom). */
+    @JsonIgnoreProperties({ "empresa" })
+    @ManyToOne
+    @JoinColumn(name = "cupom_id")
+    private Cupom cupom;
 
     @NotNull(message = "O usuário é obrigatório")
     @ManyToOne

@@ -37,6 +37,12 @@ public class CaixaService {
     MovimentacaoFinanceiraRepository movimentacaoRepository;
 
     /** Caixa aberto da empresa, ou null se nenhum estiver aberto agora. */
+    /** Sessões já fechadas cujo fechamento caiu dentro de [inicio, fim], mais recentes primeiro. */
+    public java.util.List<Caixa> historico(LocalDateTime inicio, LocalDateTime fim) {
+        return repository.findAllByEmpresaIdAndStatusAndDtFechamentoBetweenOrderByDtFechamentoDesc(
+                SecurityUtils.getEmpresaId(), StatusCaixa.FECHADO, inicio, fim);
+    }
+
     public Caixa status() {
         return repository.findByEmpresaIdAndStatus(SecurityUtils.getEmpresaId(), StatusCaixa.ABERTO).orElse(null);
     }

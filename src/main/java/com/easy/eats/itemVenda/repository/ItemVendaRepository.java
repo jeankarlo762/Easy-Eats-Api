@@ -14,4 +14,6 @@ public interface ItemVendaRepository extends JpaRepository<ItemVenda, Integer> {
     List<ItemVenda> findAllByVenda_Empresa_Id(Integer empresaId);
 
     Optional<ItemVenda> findByIdAndVenda_Empresa_Id(Integer id, Integer empresaId);
+
+    List<ItemVenda> findAllByVenda_Id(Integer vendaId);
 }

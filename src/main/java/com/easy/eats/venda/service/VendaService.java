@@ -20,8 +20,14 @@ import com.easy.eats.cliente.repository.ClienteRepository;
 import com.easy.eats.comanda.enums.StatusComanda;
 import com.easy.eats.comanda.model.Comanda;
 import com.easy.eats.comanda.repository.ComandaRepository;
+import com.easy.eats.cupom.enums.TipoDesconto;
+import com.easy.eats.cupom.model.Cupom;
+import com.easy.eats.cupom.model.CupomUso;
+import com.easy.eats.cupom.repository.CupomRepository;
+import com.easy.eats.cupom.repository.CupomUsoRepository;
 import com.easy.eats.empresa.repository.EmpresaRepository;
 import com.easy.eats.itemVenda.model.ItemVenda;
+import com.easy.eats.itemVenda.repository.ItemVendaRepository;
 import com.easy.eats.itemVenda.service.ItemVendaService;
 import com.easy.eats.mesa.model.Mesa;
 import com.easy.eats.mesa.repository.MesaRepository;
@@ -29,6 +35,7 @@ import com.easy.eats.notificacao.service.NotificacaoService;
 import com.easy.eats.security.SecurityUtils;
 import com.easy.eats.usuario.model.Usuario;
 import com.easy.eats.usuario.repository.UsuarioRepository;
+import com.easy.eats.venda.model.RelatorioFaturamento;
 import com.easy.eats.venda.model.Venda;
 import com.easy.eats.venda.quicksort.ProdutoRanking;
 import com.easy.eats.venda.quicksort.QuickSortProdutos;
@@ -63,6 +70,15 @@ public class VendaService {
 
     @Autowired
     CashbackConfigService cashbackConfigService;
+
+    @Autowired
+    ItemVendaRepository itemVendaRepository;
+
+    @Autowired
+    CupomRepository cupomRepository;
+
+    @Autowired
+    CupomUsoRepository cupomUsoRepository;
 
     @Transactional
     public Venda criar(Venda venda) {
@@ -155,6 +171,166 @@ public class VendaService {
         BigDecimal saldoAtual = cliente.getSaldoCashback() != null ? cliente.getSaldoCashback() : BigDecimal.ZERO;
         cliente.setSaldoCashback(saldoAtual.add(credito));
         clienteRepository.save(cliente);
+    }
+
+    /**
+     * Recalcula valor_total = soma dos itens - desconto (cupom + cashback
+     * resgatado). Chamado sempre que um item é criado, alterado ou removido.
+     */
+    @Transactional
+    public Venda recalcularTotal(Integer vendaId) {
+        Venda venda = repository.findById(vendaId)
+                .orElseThrow(() -> new IllegalArgumentException("Venda não encontrada"));
+        BigDecimal desconto = venda.getDesconto() != null ? venda.getDesconto() : BigDecimal.ZERO;
+        venda.setValor_total(somaItens(vendaId).subtract(desconto).max(BigDecimal.ZERO));
+        return repository.save(venda);
+    }
+
+    /**
+     * Valida e aplica um cupom à venda: ativo, vigência, valor mínimo do
+     * pedido e limites de uso (total e por cliente, contados em CupomUso).
+     */
+    @Transactional
+    public Venda aplicarCupom(Integer vendaId, String codigo) {
+        Venda venda = repository.findByIdAndEmpresaId(vendaId, SecurityUtils.getEmpresaId())
+                .orElseThrow(() -> new IllegalArgumentException("Venda não encontrada"));
+
+        if (venda.getCupom() != null) {
+            throw new IllegalArgumentException("Esta venda já tem um cupom aplicado");
+        }
+        if (codigo == null || codigo.isBlank()) {
+            throw new IllegalArgumentException("Informe o código do cupom");
+        }
+
+        Cupom cupom = cupomRepository.findByCodigoIgnoreCaseAndEmpresaId(codigo.trim(), venda.getEmpresa().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Cupom não encontrado"));
+
+        if (!Boolean.TRUE.equals(cupom.getFlAtivo())) {
+            throw new IllegalArgumentException("Este cupom não está ativo");
+        }
+        LocalDateTime agora = LocalDateTime.now();
+        if (cupom.getDtValidadeInicio() != null && agora.isBefore(cupom.getDtValidadeInicio())) {
+            throw new IllegalArgumentException("Este cupom ainda não é válido");
+        }
+        if (cupom.getDtValidadeFim() != null && agora.isAfter(cupom.getDtValidadeFim())) {
+            throw new IllegalArgumentException("Este cupom está expirado");
+        }
+
+        BigDecimal totalItens = somaItens(vendaId);
+        if (cupom.getValorMinimoPedido() != null && totalItens.compareTo(cupom.getValorMinimoPedido()) < 0) {
+            throw new IllegalArgumentException(
+                    "O pedido precisa ter no mínimo R$ " + cupom.getValorMinimoPedido() + " para usar este cupom");
+        }
+        if (cupom.getLimiteUsoTotal() != null
+                && cupomUsoRepository.countByCupomId(cupom.getId()) >= cupom.getLimiteUsoTotal()) {
+            throw new IllegalArgumentException("Este cupom atingiu o limite de usos");
+        }
+        Integer clienteId = venda.getCliente() != null ? venda.getCliente().getId() : null;
+        if (clienteId != null && cupom.getLimiteUsoPorCliente() != null
+                && cupomUsoRepository.countByCupomIdAndClienteId(cupom.getId(), clienteId) >= cupom.getLimiteUsoPorCliente()) {
+            throw new IllegalArgumentException("Este cliente já atingiu o limite de usos deste cupom");
+        }
+
+        BigDecimal valorDesconto = cupom.getValorDesconto() != null ? cupom.getValorDesconto() : BigDecimal.ZERO;
+        BigDecimal desconto = cupom.getTipoDesconto() == TipoDesconto.PERCENTUAL
+                ? totalItens.multiply(valorDesconto).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
+                : valorDesconto.min(totalItens);
+
+        BigDecimal descontoAtual = venda.getDesconto() != null ? venda.getDesconto() : BigDecimal.ZERO;
+        venda.setCupom(cupom);
+        venda.setDesconto(descontoAtual.add(desconto));
+        venda.setValor_total(totalItens.subtract(venda.getDesconto()).max(BigDecimal.ZERO));
+        Venda salva = repository.save(venda);
+
+        CupomUso uso = new CupomUso();
+        uso.setCupom(cupom);
+        uso.setVenda(salva);
+        uso.setCliente(venda.getCliente());
+        cupomUsoRepository.save(uso);
+
+        return salva;
+    }
+
+    /** Resgata parte do saldo de cashback do cliente da venda, abatendo do total. */
+    @Transactional
+    public Venda resgatarCashback(Integer vendaId, BigDecimal valor) {
+        Venda venda = repository.findByIdAndEmpresaId(vendaId, SecurityUtils.getEmpresaId())
+                .orElseThrow(() -> new IllegalArgumentException("Venda não encontrada"));
+
+        if (venda.getCliente() == null) {
+            throw new IllegalArgumentException("Esta venda não está vinculada a um cliente cadastrado");
+        }
+        if (valor == null || valor.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Informe um valor maior que zero");
+        }
+
+        Cliente cliente = clienteRepository.findById(venda.getCliente().getId())
+                .orElseThrow(() -> new IllegalStateException("Cliente da venda não encontrado"));
+        BigDecimal saldoAtual = cliente.getSaldoCashback() != null ? cliente.getSaldoCashback() : BigDecimal.ZERO;
+        if (valor.compareTo(saldoAtual) > 0) {
+            throw new IllegalArgumentException("Saldo de cashback insuficiente");
+        }
+
+        BigDecimal totalItens = somaItens(vendaId);
+        BigDecimal descontoAtual = venda.getDesconto() != null ? venda.getDesconto() : BigDecimal.ZERO;
+        BigDecimal resgatavel = valor.min(totalItens.subtract(descontoAtual).max(BigDecimal.ZERO));
+
+        cliente.setSaldoCashback(saldoAtual.subtract(resgatavel));
+        clienteRepository.save(cliente);
+
+        venda.setDesconto(descontoAtual.add(resgatavel));
+        venda.setValor_total(totalItens.subtract(venda.getDesconto()).max(BigDecimal.ZERO));
+        return repository.save(venda);
+    }
+
+    /** Faturamento agregado da empresa no período [inicio, fim] (vendas canceladas ficam de fora). */
+    public RelatorioFaturamento relatorioFaturamento(LocalDateTime inicio, LocalDateTime fim) {
+        List<Venda> vendas = repository.findAllByEmpresaId(SecurityUtils.getEmpresaId()).stream()
+                .filter(v -> !"Cancelado".equalsIgnoreCase(v.getStatus()))
+                .filter(v -> {
+                    LocalDateTime criacao = dataCriacao(v);
+                    return criacao != null && !criacao.isBefore(inicio) && !criacao.isAfter(fim);
+                })
+                .toList();
+
+        BigDecimal total = vendas.stream()
+                .map(this::valorDaVenda)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        int quantidade = vendas.size();
+        BigDecimal ticketMedio = quantidade > 0
+                ? total.divide(BigDecimal.valueOf(quantidade), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        return new RelatorioFaturamento(total, ticketMedio, quantidade);
+    }
+
+    /** valor_total quando já calculado; senão soma dos itens (vendas antigas). */
+    private BigDecimal valorDaVenda(Venda venda) {
+        if (venda.getValor_total() != null) {
+            return venda.getValor_total();
+        }
+        return (venda.getItens() != null ? venda.getItens() : List.<ItemVenda>of()).stream()
+                .map(ItemVenda::getValor_total)
+                .filter(v -> v != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private LocalDateTime dataCriacao(Venda venda) {
+        if (venda.getDt_criacao() == null) {
+            return null;
+        }
+        try {
+            return LocalDateTime.parse(venda.getDt_criacao());
+        } catch (java.time.format.DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    private BigDecimal somaItens(Integer vendaId) {
+        return itemVendaRepository.findAllByVenda_Id(vendaId).stream()
+                .map(ItemVenda::getValor_total)
+                .filter(v -> v != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public List<Venda> listarTodos() {
