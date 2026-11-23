@@ -67,6 +67,27 @@ public class Venda {
 
     private String observacao;
 
+    // Dados preenchidos pelo cliente no cardápio digital (vazios nas vendas lançadas no sistema)
+    @Column(name = "telefone_cliente", length = 20)
+    private String telefoneCliente;
+
+    @Column(name = "endereco_entrega", length = 500)
+    private String enderecoEntrega;
+
+    // Forma de pagamento escolhida pelo cliente no cardápio; o pagamento é registrado na entrega/retirada
+    @Enumerated(EnumType.STRING)
+    @Column(name = "forma_pagamento_prevista", length = 10)
+    private FormaPagamentoEnum formaPagamentoPrevista;
+
+    // Em dinheiro: quanto o cliente vai entregar (para o entregador levar o troco)
+    @Column(name = "troco_para", precision = 12, scale = 2)
+    private BigDecimal trocoPara;
+
+    // De onde a venda veio. Nulo nas vendas antigas (lançadas no sistema)
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private OrigemVendaEnum origem;
+
     @Column(name = "usuario_abertura", nullable = false)
     private String usuarioAbertura;
 

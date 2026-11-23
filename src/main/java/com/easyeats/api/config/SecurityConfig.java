@@ -49,6 +49,7 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/usuarios/**",
                                 "/sec/publico/**",
+                                "/publico/cardapio/**",
                                 "/actuator/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",

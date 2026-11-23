@@ -3,6 +3,7 @@ package com.easyeats.api.dto.mapper;
 import com.easyeats.api.dto.PagamentoVendaDto;
 import com.easyeats.api.dto.VendaDto;
 import com.easyeats.api.dto.VendaResumoDto;
+import com.easyeats.api.entity.OrigemVendaEnum;
 import com.easyeats.api.entity.PagamentoVenda;
 import com.easyeats.api.entity.Pedido;
 import com.easyeats.api.entity.Venda;
@@ -31,6 +32,11 @@ public class VendaMapper {
                 venda.getStatus(),
                 venda.getNomeCliente(),
                 venda.getObservacao(),
+                venda.getTelefoneCliente(),
+                venda.getEnderecoEntrega(),
+                venda.getFormaPagamentoPrevista(),
+                venda.getTrocoPara(),
+                venda.getOrigem() != null ? venda.getOrigem() : OrigemVendaEnum.SISTEMA,
                 venda.getUsuarioAbertura(),
                 venda.getDataAbertura(),
                 venda.getUsuarioFechamento(),
@@ -53,6 +59,11 @@ public class VendaMapper {
                 venda.getMesa() != null ? venda.getMesa().getNumero() : null,
                 venda.getStatus(),
                 venda.getNomeCliente(),
+                venda.getTelefoneCliente(),
+                venda.getEnderecoEntrega(),
+                venda.getFormaPagamentoPrevista(),
+                venda.getTrocoPara(),
+                venda.getOrigem() != null ? venda.getOrigem() : OrigemVendaEnum.SISTEMA,
                 venda.getUsuarioAbertura(),
                 venda.getDataAbertura(),
                 venda.getUsuarioFechamento(),
