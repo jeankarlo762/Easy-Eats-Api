@@ -89,7 +89,7 @@ public class WhatsAppService {
         WhatsAppProvider provedor = provedores.get(nome == null ? "" : nome.trim().toLowerCase());
         if (provedor == null) {
             throw new IllegalStateException("Provedor de WhatsApp desconhecido: " + nome
-                    + " (use evolution, http ou log)");
+                    + " (use baileys, http ou log)");
         }
         return provedor;
     }

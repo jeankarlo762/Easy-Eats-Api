@@ -17,22 +17,19 @@ public class WhatsAppProperties {
     /** Liga/desliga o envio. Desligado, as mensagens só aparecem no log. */
     private boolean habilitado = false;
 
-    /** Provedor: {@code evolution} (Evolution API), {@code http} (genérico) ou {@code log} (só registra no log). */
-    private String provedor = "evolution";
+    /** Provedor: {@code baileys} (gateway próprio), {@code http} (genérico) ou {@code log} (só registra no log). */
+    private String provedor = "baileys";
 
     /**
-     * Evolution: URL base do servidor (ex.: https://evolution.seudominio.com).
+     * Baileys: URL do gateway (ex.: http://whatsapp.railway.internal:3000).
      * HTTP genérico: URL completa do endpoint que recebe o POST.
      */
     private String url;
 
-    /** Evolution: apikey da instância. HTTP genérico: enviado como "Authorization: Bearer". */
+    /** Baileys: a API_KEY do gateway (header x-api-key). HTTP genérico: enviado como "Authorization: Bearer". */
     private String token;
 
-    /** Evolution: nome da instância conectada (o número que envia as mensagens). */
-    private String instancia;
-
-    /** Número da loja que recebe o aviso de novo pedido (com DDI e DDD, ex.: 5511999998888). Opcional. */
+    /** Número que também recebe o aviso de novo pedido (com DDI e DDD). Opcional; vazio = só o cliente é avisado. */
     private String numeroLoja;
 
     /** Envia ao cliente a confirmação do pedido no telefone que ele informou. */
