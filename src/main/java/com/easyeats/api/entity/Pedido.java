@@ -1,0 +1,97 @@
+package com.easyeats.api.entity;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Data
+@Builder
+@Entity
+@AllArgsConstructor
+@NoArgsConstructor
+@Table(name = "tb_pedido")
+public class Pedido {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime dataCriacao;
+
+    private LocalDateTime dataAlteracao;
+
+    private String cliente;
+
+    // Observação da comanda (por exemplo, "sem cebola")
+    private String observacao;
+
+    // Nula nas comandas de retirada e delivery (a mesa só existe no atendimento de mesa)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "mesa_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Mesa mesa;
+
+    // Venda (conta) a que a comanda pertence. Nula só em pedidos antigos, anteriores à Venda.
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "venda_id")
+    private Venda venda;
+
+    @Enumerated(EnumType.STRING)
+    @Column
+    private StatusPedidoEnum status;
+
+    @Column(name = "valor_total", nullable = false, precision = 10, scale = 2)
+    private BigDecimal valorTotal;
+
+    // Marca que os ingredientes do pedido já foram baixados do estoque (garante a baixa uma única vez).
+    // default false: o Hibernate (ddl-auto=update) acrescenta o NOT NULL e as linhas já existentes ficam false
+    @Column(name = "estoque_baixado", nullable = false, columnDefinition = "boolean default false")
+    private boolean estoqueBaixado;
+
+    @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ItemPedido> itens = new ArrayList<>();
+
+    public void adicionarItem(ItemPedido item) {
+        if (this.itens == null) {
+            this.itens = new ArrayList<>();
+        }
+        item.setPedido(this);
+        this.itens.add(item);
+    }
+
+    @PrePersist
+    public void antesDeCriar() {
+        LocalDateTime agora = LocalDateTime.now();
+        dataCriacao = agora;
+        dataAlteracao = agora;
+
+        if (status == null) {
+            status = StatusPedidoEnum.ABERTO;
+        }
+    }
+
+    @PreUpdate
+    public void antesDeAtualizar() {
+        dataAlteracao = LocalDateTime.now();
+
+        if (status == null) {
+            status = StatusPedidoEnum.ABERTO;
+        }
+    }
+}

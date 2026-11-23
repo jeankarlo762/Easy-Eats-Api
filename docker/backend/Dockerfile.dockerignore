@@ -1,8 +1,0 @@
-target
-.git
-.claude
-.mvn
-.vscode
-.idea
-docker
-*.md
