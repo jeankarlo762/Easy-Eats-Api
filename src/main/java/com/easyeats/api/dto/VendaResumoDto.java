@@ -1,5 +1,7 @@
 package com.easyeats.api.dto;
 
+import com.easyeats.api.entity.FormaPagamentoEnum;
+import com.easyeats.api.entity.OrigemVendaEnum;
 import com.easyeats.api.entity.StatusVendaEnum;
 import com.easyeats.api.entity.TipoVendaEnum;
 
@@ -21,6 +23,16 @@ public record VendaResumoDto(
         StatusVendaEnum status,
         @Schema(description = "Nome do cliente", example = "Ana", accessMode = Schema.AccessMode.READ_ONLY)
         String nomeCliente,
+        @Schema(description = "Telefone do cliente (cardápio digital)", example = "11999998888", accessMode = Schema.AccessMode.READ_ONLY)
+        String telefoneCliente,
+        @Schema(description = "Endereço de entrega (delivery do cardápio digital)", accessMode = Schema.AccessMode.READ_ONLY)
+        String enderecoEntrega,
+        @Schema(description = "Forma de pagamento escolhida pelo cliente no cardápio digital", example = "PIX", accessMode = Schema.AccessMode.READ_ONLY)
+        FormaPagamentoEnum formaPagamentoPrevista,
+        @Schema(description = "Em dinheiro: valor que o cliente vai entregar, para o troco", example = "100.00", accessMode = Schema.AccessMode.READ_ONLY)
+        BigDecimal trocoPara,
+        @Schema(description = "Origem da venda: SISTEMA ou CARDAPIO_DIGITAL", example = "CARDAPIO_DIGITAL", accessMode = Schema.AccessMode.READ_ONLY)
+        OrigemVendaEnum origem,
         @Schema(description = "Usuário que abriu a venda", example = "superadmin", accessMode = Schema.AccessMode.READ_ONLY)
         String usuarioAbertura,
         @Schema(description = "Data e hora da abertura", example = "2026-03-10T12:00:00", accessMode = Schema.AccessMode.READ_ONLY)

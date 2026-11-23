@@ -179,6 +179,11 @@ public abstract class IntegrationTestBase {
         return mockMvc.perform(comToken(MockMvcRequestBuilders.patch(url)));
     }
 
+    /** GET sem o header Authorization (rotas públicas). */
+    protected ResultActions getSemToken(String url) throws Exception {
+        return mockMvc.perform(MockMvcRequestBuilders.get(url));
+    }
+
     /** Mesma requisição, mas sem o header Authorization. */
     protected ResultActions postSemToken(String url, String json) throws Exception {
         return mockMvc.perform(MockMvcRequestBuilders.post(url)

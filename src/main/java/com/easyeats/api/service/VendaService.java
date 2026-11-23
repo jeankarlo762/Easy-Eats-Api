@@ -16,6 +16,7 @@ import com.easyeats.api.dto.mapper.VendaMapper;
 import com.easyeats.api.entity.Caixa;
 import com.easyeats.api.entity.FormaPagamentoEnum;
 import com.easyeats.api.entity.Mesa;
+import com.easyeats.api.entity.OrigemVendaEnum;
 import com.easyeats.api.entity.PagamentoVenda;
 import com.easyeats.api.entity.Pedido;
 import com.easyeats.api.entity.StatusPedidoEnum;
@@ -56,6 +57,8 @@ public class VendaService {
 
     private static final int TAMANHO_MAXIMO_PAGINA = 100;
     private static final BigDecimal ZERO = BigDecimal.ZERO.setScale(2);
+    /** Usuário gravado como responsável pela abertura das vendas feitas pelo cliente no cardápio digital. */
+    public static final String USUARIO_CARDAPIO = "cardapio-digital";
 
     private final VendaRepository vendaRepository;
     private final PagamentoVendaRepository pagamentoRepository;
@@ -134,6 +137,34 @@ public class VendaService {
         String nomeCliente = textoOuNull(cliente);
         exigirNomeDaRetirada(nomeCliente);
         return vendaRepository.save(novaVenda(TipoVendaEnum.RETIRADA, null, nomeCliente, null, usuario));
+    }
+
+    /**
+     * Venda criada pelo cliente no cardápio digital (QR Code): DELIVERY (com endereço) ou RETIRADA.
+     * Não há usuário logado; a abertura fica registrada como {@link #USUARIO_CARDAPIO}. O pagamento escolhido
+     * pelo cliente fica como previsto e é registrado normalmente na conta quando o pedido for pago.
+     */
+    @Transactional
+    public Venda abrirPeloCardapio(TipoVendaEnum tipo, String nomeCliente, String telefone, String endereco,
+            FormaPagamentoEnum formaPagamento, BigDecimal trocoPara, String observacao) {
+        if (tipo != TipoVendaEnum.DELIVERY && tipo != TipoVendaEnum.RETIRADA) {
+            throw new RegraNegocioException("O cardápio digital aceita apenas delivery ou retirada");
+        }
+        String nome = textoOuNull(nomeCliente);
+        exigirNomeDaRetirada(nome);
+        if (tipo == TipoVendaEnum.DELIVERY && textoOuNull(endereco) == null) {
+            throw new RegraNegocioException("Informe o endereço de entrega");
+        }
+
+        Venda venda = novaVenda(tipo, null, nome, textoOuNull(observacao),
+                new UsuarioAutenticado(USUARIO_CARDAPIO, false));
+        venda.setOrigem(OrigemVendaEnum.CARDAPIO_DIGITAL);
+        venda.setTelefoneCliente(telefone);
+        venda.setEnderecoEntrega(tipo == TipoVendaEnum.DELIVERY ? endereco.trim() : null);
+        venda.setFormaPagamentoPrevista(formaPagamento);
+        venda.setTrocoPara(formaPagamento == FormaPagamentoEnum.DINHEIRO && trocoPara != null
+                ? trocoPara.setScale(2, RoundingMode.HALF_UP) : null);
+        return vendaRepository.save(venda);
     }
 
     // ------------------------------------------------------------------ regras usadas pelas comandas
@@ -400,6 +431,7 @@ public class VendaService {
         venda.setNomeCliente(nomeCliente);
         venda.setObservacao(observacao);
         venda.setUsuarioAbertura(usuario.username());
+        venda.setOrigem(OrigemVendaEnum.SISTEMA);
         return venda;
     }
 
