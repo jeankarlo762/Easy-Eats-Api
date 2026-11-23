@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.easy.eats.itemVenda.model.ItemVenda;
 import com.easy.eats.itemVenda.service.ItemVendaService;
 
+import com.easy.eats.venda.service.VendaService;
+
 import jakarta.validation.Valid;
 
 @RestController
@@ -26,9 +28,13 @@ public class ItemVendaController {
     @Autowired
     ItemVendaService service;
 
+    @Autowired
+    VendaService vendaService;
+
     @PostMapping
     public ResponseEntity<ItemVenda> criar(@Valid @RequestBody ItemVenda itemVenda) {
         ItemVenda novoItemVenda = service.criar(itemVenda);
+        vendaService.recalcularTotal(novoItemVenda.getVenda().getId());
         return ResponseEntity.ok(novoItemVenda);
     }
 
@@ -54,17 +60,19 @@ public class ItemVendaController {
             itemVendaExistente.setDesconto(itemVendaAtualizado.getDesconto());
             itemVendaExistente.setObservacao(itemVendaAtualizado.getObservacao());
             ItemVenda itemVendaSalvo = service.salvar(itemVendaExistente);
+            vendaService.recalcularTotal(itemVendaSalvo.getVenda().getId());
             return ResponseEntity.ok(itemVendaSalvo);
         }).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Integer id) {
-        if (service.buscarPorId(id).isPresent()) {
+        return service.buscarPorId(id).map(itemVendaExistente -> {
+            Integer vendaId = itemVendaExistente.getVenda().getId();
             service.deletar(id);
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+            vendaService.recalcularTotal(vendaId);
+            return ResponseEntity.noContent().<Void>build();
+        }).orElseGet(() -> ResponseEntity.notFound().build());
     }
     
 }
