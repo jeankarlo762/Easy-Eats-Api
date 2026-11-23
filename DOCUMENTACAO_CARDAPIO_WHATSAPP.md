@@ -31,31 +31,49 @@ Variáveis de ambiente (opcionais):
 ## Integração WhatsApp (`com.easyeats.api.integracao.whatsapp`)
 
 Módulo isolado: o resto do sistema só chama `NotificacaoPedidoWhatsApp.novoPedido(...)`. O envio acontece em
-segundo plano, depois do commit; se o provedor falhar, o pedido não é afetado (o erro vai para o log).
+segundo plano, depois do commit; se o WhatsApp falhar, o pedido não é afetado (o erro vai para o log).
 
-Ao receber um pedido do cardápio:
-- o **cliente** recebe a confirmação com os itens, total, pagamento e entrega (se `WHATSAPP_NOTIFICAR_CLIENTE=true`);
-- a **loja** recebe o aviso de novo pedido (se `WHATSAPP_NUMERO_LOJA` estiver preenchido).
+O envio usa **Baileys**: o número comum de WhatsApp da loja é conectado pelo QR Code (como no WhatsApp Web) e é
+ele que manda a confirmação para o cliente que fez o pedido.
 
-Provedores:
-- `evolution` (padrão): [Evolution API](https://doc.evolution-api.com), que conecta um número comum de WhatsApp
-  pelo QR Code. Envia `POST {WHATSAPP_API_URL}/message/sendText/{WHATSAPP_INSTANCIA}` com o header `apikey`.
-- `http`: genérico. `POST {WHATSAPP_API_URL}` com `{"number": "...", "text": "..."}` e `Authorization: Bearer {token}`.
-- `log`: não envia, só registra no log.
+```
+Cardápio (cliente) ──> API Easy Eats ──(x-api-key)──> whatsapp-gateway (Node + Baileys) ──> WhatsApp
+                          ▲
+Tela "WhatsApp" (gestão) ─┘  mostra o QR Code e o status da conexão
+```
+
+### Gateway (`whatsapp-gateway/`)
+
+Serviço Node separado (Dockerfile próprio). No Railway: serviço com *root directory* `whatsapp-gateway` e um
+volume em `/data` (guarda a sessão, para o número continuar conectado após um deploy).
+
+| Variável | |
+|---|---|
+| `API_KEY` | Chave compartilhada com a API (mín. 16 caracteres) |
+| `AUTH_DIR` | Pasta da sessão (padrão no Docker: `/data/auth`) |
+| `PORT` | Porta HTTP (padrão 3000) |
+
+Rotas: `GET /health` (livre), `GET /status`, `POST /send` `{number, text}`, `POST /logout` (header `x-api-key`).
+
+### API
 
 | Variável | Padrão | |
 |---|---|---|
 | `WHATSAPP_HABILITADO` | `false` | Desligado, as mensagens só vão para o log |
-| `WHATSAPP_PROVEDOR` | `evolution` | `evolution`, `http` ou `log` |
-| `WHATSAPP_API_URL` | | Evolution: URL base do servidor. HTTP: URL completa |
-| `WHATSAPP_API_TOKEN` | | Evolution: apikey. HTTP: bearer token |
-| `WHATSAPP_INSTANCIA` | | Evolution: nome da instância conectada |
-| `WHATSAPP_NUMERO_LOJA` | | Número que recebe o aviso de novo pedido (ex.: 5511999998888) |
-| `WHATSAPP_NOTIFICAR_CLIENTE` | `true` | |
+| `WHATSAPP_PROVEDOR` | `baileys` | `baileys`, `http` (genérico) ou `log` |
+| `WHATSAPP_API_URL` | | URL do gateway (no Railway, pela rede interna: `http://<servico>.railway.internal:3000`) |
+| `WHATSAPP_API_TOKEN` | | A mesma `API_KEY` do gateway |
+| `WHATSAPP_NOTIFICAR_CLIENTE` | `true` | Confirmação para o cliente |
+| `WHATSAPP_NUMERO_LOJA` | | Opcional: número que também recebe o aviso de novo pedido |
 | `WHATSAPP_DDI_PADRAO` | `55` | Acrescentado a telefones com 10 ou 11 dígitos |
 
-Para conferir (Administrador/Gerente): `GET /integracoes/whatsapp/status` e
-`POST /integracoes/whatsapp/teste` com `{"telefone": "11999998888"}`.
+Rotas (Administrador/Gerente): `GET /integracoes/whatsapp/conexao` (status + QR), `POST /integracoes/whatsapp/desconectar`,
+`GET /integracoes/whatsapp/status` (configuração) e `POST /integracoes/whatsapp/teste` `{"telefone": "11999998888"}`.
 
-Para trocar de API, crie outra implementação de `WhatsAppProvider` (um `@Component` com `nome()` próprio) e
-aponte `WHATSAPP_PROVEDOR` para ela.
+### Conectar o número
+
+No sistema, menu **WhatsApp**: aparece o QR Code; no celular da loja, WhatsApp > Dispositivos conectados >
+Conectar um dispositivo. Depois de conectado, dá para mandar uma mensagem de teste pela mesma tela.
+
+Observação: Baileys não é a API oficial do WhatsApp. Use um número da loja e evite mensagens em massa, para não
+correr risco de bloqueio do número.

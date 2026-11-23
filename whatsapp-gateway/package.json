@@ -1,0 +1,17 @@
+{
+  "name": "easyeats-whatsapp-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Conecta um número de WhatsApp (Baileys, pelo QR Code) e envia as notificações do Easy Eats",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "6.7.24",
+    "pino": "^9.6.0"
+  }
+}
